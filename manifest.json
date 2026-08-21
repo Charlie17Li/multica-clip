@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Multica Knowledge Capture",
+  "version": "0.1.0",
+  "description": "Create a traceable Multica knowledge-capture issue from the current page.",
+  "permissions": ["activeTab", "storage"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_title": "Capture to Multica",
+    "default_popup": "popup.html"
+  }
+}
