@@ -2,6 +2,8 @@
 
 A Chrome/Edge Manifest V3 extension for creating a traceable Multica knowledge-capture issue from the active webpage.
 
+[中文版说明](README.zh-CN.md)
+
 ## Install locally
 
 1. Open `chrome://extensions` (or `edge://extensions`) and enable Developer mode.
