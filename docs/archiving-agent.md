@@ -14,7 +14,6 @@ An eligible issue has a `## Knowledge capture source` section (or an equivalent 
 | `Captured at` | Yes | Preserve as an ISO-8601 capture timestamp. |
 | `Capture mode` | Yes | `link` is metadata-only; `snapshot` may be summarised, subject to the user's explicit confirmation already recorded by the extension. |
 | `User note` | No | Treat as the user's intended angle; retain it separately from factual summary. |
-| `Selected text` | No | Quote only when useful and clearly attribute it to the source. |
 | `Page-text snapshot` | No | Input material, not a license to publish a verbatim copy. |
 
 Reject or request clarification when the URL is absent or malformed, the issue is not a knowledge capture, or the requested archive destination is unclear. Never recover a page body, cookie, credential, or other browser data that was not included in the issue.
