@@ -67,18 +67,10 @@ function issuePayload(source, note, projectId, agentId, snapshot) {
     title: `Knowledge capture: ${source.title || source.site}`,
     description: issueDescription(source, note, snapshot),
     project_id: projectId,
-    assignee_id: agentId,
-    // The structured source object is deliberately duplicated in the request.
-    // Server implementations that support custom properties may persist it;
-    // the Markdown description keeps the issue traceable on older servers.
-    source: {
-      url: source.url,
-      title: source.title,
-      site: source.site,
-      captured_at: source.capturedAt,
-      capture_mode: snapshot ? "snapshot" : "link",
-      body_snapshot: snapshot || null
-    }
+    // Multica validates assignees as a type/id pair. Destinations in this
+    // extension are agents, so sending only assignee_id is rejected with 400.
+    assignee_type: "agent",
+    assignee_id: agentId
   };
 }
 

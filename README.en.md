@@ -29,19 +29,12 @@ The extension sends `POST {serverUrl}/api/issues` with an `Authorization: Bearer
   "title": "Knowledge capture: Example article",
   "description": "Human-readable, traceable source fields",
   "project_id": "target-project-uuid",
-  "assignee_id": "target-agent-uuid",
-  "source": {
-    "url": "https://example.com/article",
-    "title": "Example article",
-    "site": "example.com",
-    "captured_at": "2026-08-22T00:00:00.000Z",
-    "capture_mode": "link",
-    "body_snapshot": null
-  }
+  "assignee_type": "agent",
+  "assignee_id": "target-agent-uuid"
 }
 ```
 
-The server should create an issue in `project_id`, persist `source` where custom structured fields are supported, and return an issue object (or `{ "issue": issue }`) containing at least `id` or `identifier`. The source is also included in `description` so it remains traceable if the server has not yet added structured source support.
+The server creates an issue in `project_id` and assigns it to the Agent; `assignee_type` and `assignee_id` must be supplied together. It returns an issue object (or `{ "issue": issue }`) containing at least `id` or `identifier`. The source remains traceable through `description`.
 
 ### Authorization and project selection
 
