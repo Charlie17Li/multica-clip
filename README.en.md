@@ -48,7 +48,7 @@ The popup preserves the note and opt-in choices after an API failure, so the use
 
 ## Troubleshooting and reporting
 
-When an error occurs, the popup or Settings page shows **Copy diagnostic report**. Check the displayed error first (the usual causes are server permission, network, token, or destination configuration), then attach the copied report to a Multica issue or support request. It contains only the latest 20 timestamps, extension version, browser information, event type, HTTP status, and server origin; it **never includes** an access token, note, page snapshot, or full page URL.
+When an error occurs, the popup or Settings page shows **Copy diagnostic report**. Check the displayed error first (the usual causes are server permission, network, token, or destination configuration), then attach the copied report to a Multica issue or support request. For failed issue creation, it includes a request-field summary (project, agent, capture mode, and lengths) and a redacted server response; it **never includes** an access token, note, page snapshot, or full page URL. The report is copied as a code block so it can be pasted directly into an issue.
 
 To reproduce a problem, enable Developer mode in `chrome://extensions` / `edge://extensions`, select **Inspect views** for the extension to open the popup console, and use the extension **Details** page to inspect errors. A deliberately invalid token, revoked server-site permission, or unreachable test server reproduces authentication, permission, and network errors respectively. Never paste a real token or page snapshot into DevTools or an issue.
 

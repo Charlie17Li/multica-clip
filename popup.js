@@ -176,18 +176,25 @@ async function createIssue() {
       content = { snapshot: "", snapshotFallback: true };
     }
     setStatus(t("creating"));
+    const payload = issuePayload(page, byId("note").value, projectId, agentId, content.snapshot);
     const response = await fetch(`${normalizedServerUrl(settings.serverUrl)}/api/issues`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${settings.accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(issuePayload(page, byId("note").value, projectId, agentId, content.snapshot))
+      body: JSON.stringify(payload)
     });
-    const result = await response.json().catch(() => ({}));
+    const responseText = await response.text();
+    const result = parseResponseJson(responseText);
     if (!response.ok) {
       const message = `Multica returned ${response.status}.`;
-      await recordDiagnostic("issue_create_failed", { status: response.status, serverOrigin, message });
+      await recordDiagnostic("issue_create_failed", {
+        message,
+        serverOrigin,
+        request: captureRequestSummary(payload, page.site, Boolean(content.snapshot)),
+        response: diagnosticResponse(response, responseText)
+      });
       throw new Error(message);
     }
     const issue = result.issue || result;
