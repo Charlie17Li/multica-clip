@@ -18,6 +18,12 @@
         <input id="access-token" type="password" placeholder="Paste a personal access token" autocomplete="off" required>
         <p class="hint">Stored only in this browser's extension storage and sent only to the configured Multica server.</p>
 
+        <label for="workspace-id">Workspace</label>
+        <select id="workspace-id" required disabled>
+          <option value="">Load destinations first</option>
+        </select>
+        <button id="load-destinations" type="button">Load workspaces, projects, and agents</button>
+
         <section class="destinations" aria-labelledby="destinations-heading">
           <h2 id="destinations-heading">Capture destinations</h2>
           <p class="hint">Use an exact domain such as <code>example.com</code>, <code>*.example.com</code> for subdomains, or <code>*</code> as the default.</p>
@@ -35,11 +41,15 @@
         <label>Domain
           <input class="destination-domain" type="text" placeholder="example.com or *" autocomplete="off" required>
         </label>
-        <label>Project ID
-          <input class="destination-project-id" type="text" placeholder="Project UUID" autocomplete="off" required>
+        <label>Project
+          <select class="destination-project-id" required disabled>
+            <option value="">Load destinations first</option>
+          </select>
         </label>
-        <label>Agent ID
-          <input class="destination-agent-id" type="text" placeholder="Agent UUID" autocomplete="off" required>
+        <label>Agent
+          <select class="destination-agent-id" required disabled>
+            <option value="">Load destinations first</option>
+          </select>
         </label>
         <button class="remove-destination" type="button">Remove</button>
       </fieldset>
