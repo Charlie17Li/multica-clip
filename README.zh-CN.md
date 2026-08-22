@@ -52,3 +52,7 @@ M1 使用用户提供的个人访问令牌和项目 UUID。后续可替换为服
 ## 当前范围
 
 提交失败时，备注及可选项会保留在弹窗中，用户修复网络或配置后可直接再次提交。成功后，如果接口返回 issue URL 或 ID，弹窗会给出跳转入口。
+
+## 知识库归档
+
+后续 Agent 的来源字段、去重、PARA 归类、Git 可追溯性和 issue 回写格式见 [docs/archiving-agent.md](docs/archiving-agent.md)。

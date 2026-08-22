@@ -50,3 +50,7 @@ M1 uses a user-provided personal access token and project UUID. A future server-
 ## Scope
 
 The popup preserves the note and opt-in choices after an API failure, so the user can correct settings/network access and submit again. A successful response exposes an issue link when the API returns an issue URL or ID.
+
+## Knowledge-base archiving
+
+The follow-up agent contract, including source fields, deduplication, PARA placement, Git traceability, and the issue reply format, is documented in [docs/archiving-agent.md](docs/archiving-agent.md).
