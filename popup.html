@@ -38,9 +38,22 @@
 
       <label for="note">Note <span>(optional)</span></label>
       <textarea id="note" rows="4" placeholder="Why is this worth keeping?"></textarea>
-      <p class="privacy">Link mode only: this extension does not read or upload page text, selections, cookies, or screenshots.</p>
-      <button id="capture-button" type="button">Create link-mode issue</button>
+      <fieldset>
+        <legend>Optional content</legend>
+        <label class="choice" for="include-selection">
+          <input id="include-selection" type="checkbox">
+          Include the text I selected on this page
+        </label>
+        <label class="choice" for="include-snapshot">
+          <input id="include-snapshot" type="checkbox">
+          I confirm that I want to extract and upload a page-text snapshot
+        </label>
+        <p class="hint">A snapshot is read only after this confirmation. If it cannot be extracted, we create a link-mode issue instead.</p>
+      </fieldset>
+      <p class="privacy">By default, only this page's URL, title, site, capture time, and your note are submitted.</p>
+      <button id="capture-button" type="button">Create capture issue</button>
       <p id="status" role="status" aria-live="polite"></p>
+      <p id="result" aria-live="polite"></p>
     </main>
     <script src="popup.js"></script>
   </body>

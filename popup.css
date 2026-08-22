@@ -8,6 +8,10 @@ button { cursor: pointer; padding: 8px 10px; }
 label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
 label span, .hint, .privacy { color: #667085; font-size: 12px; font-weight: 400; }
 input, textarea { box-sizing: border-box; font: inherit; padding: 8px; width: 100%; }
+fieldset { border: 1px solid #d0d5dd; margin: 14px 0 8px; padding: 8px 10px; }
+legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
+label.choice { align-items: flex-start; display: flex; font-weight: 400; gap: 8px; line-height: 1.35; }
+label.choice input { margin: 2px 0 0; padding: 0; width: auto; }
 dl { font-size: 13px; margin: 0; }
 dt { color: #667085; float: left; clear: left; margin-right: 6px; }
 dd { margin: 0 0 5px; overflow-wrap: anywhere; }
@@ -17,3 +21,5 @@ dd { margin: 0 0 5px; overflow-wrap: anywhere; }
 #status { font-size: 13px; min-height: 1.3em; }
 #status.error { color: #b42318; }
 #status.success { color: #027a48; }
+#result { font-size: 13px; margin: 0; }
+#result a { color: #175cd3; }
