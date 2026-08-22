@@ -8,7 +8,7 @@
 
 1. 打开 `chrome://extensions`（或 `edge://extensions`），开启开发者模式。
 2. 点击“加载已解压的扩展程序”，选择本目录。
-3. 打开扩展，填写 Multica 服务地址、个人访问令牌和目标项目 UUID，然后保存。
+3. 从扩展弹窗打开“设置”，填写 Multica 服务地址、个人访问令牌、目标项目 UUID 和目标 Agent UUID，然后保存。
 4. 在任意 `http` / `https` 文章页打开扩展，点击“创建采集 issue”。
 
 ## 隐私与权限
@@ -16,7 +16,7 @@
 扩展清单仅声明以下安装时权限：
 
 - `activeTab` 与 `scripting`：只在用户主动打开扩展时读取当前页面的 URL 和标题；仅当用户勾选明确确认项后，才读取可选的选中文本或页面正文快照；
-- `storage`：在浏览器本地保存服务地址、令牌和目标项目。
+- `storage`：在浏览器本地保存服务地址、令牌、目标项目和目标 Agent。
 
 保存服务地址时，扩展才会针对该特定服务器按需请求可选的站点访问权限，以创建 issue。扩展不申请安装时站点权限，也不包含常驻内容脚本。
 
@@ -31,6 +31,7 @@
   "title": "Knowledge capture: Example article",
   "description": "可供阅读和追溯的来源字段",
   "project_id": "目标项目 UUID",
+  "assignee_id": "目标 Agent UUID",
   "source": {
     "url": "https://example.com/article",
     "title": "Example article",
@@ -47,7 +48,7 @@
 
 ### 授权与项目选择
 
-M1 使用用户提供的个人访问令牌和项目 UUID。后续可替换为服务端 OAuth 或项目选择器，而不改变采集请求的结构。令牌不会写入 issue 或页面请求，只保存在 `chrome.storage.local` 中。
+M1 使用用户提供的个人访问令牌、项目 UUID 和 Agent UUID。专用设置页由弹窗中的“Settings”打开，使采集流程只保留当前页面相关操作。后续可替换为服务端 OAuth 或项目/Agent 选择器，而不改变采集请求的结构。令牌不会写入 issue 或页面请求，只保存在 `chrome.storage.local` 中。
 
 ## 当前范围
 

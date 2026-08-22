@@ -8,5 +8,6 @@
   "action": {
     "default_title": "Capture to Multica",
     "default_popup": "popup.html"
-  }
+  },
+  "options_page": "options.html"
 }
