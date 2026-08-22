@@ -87,9 +87,11 @@ async function fetchApi(path, settings) {
   const response = await fetch(`${settings.serverUrl}${path}`, {
     headers: { "Authorization": `Bearer ${settings.accessToken}` }
   });
+  const responseText = await response.text();
+  const result = parseResponseJson(responseText);
   if (!response.ok) {
     const message = `Multica returned ${response.status}.`;
-    await recordDiagnostic("catalog_request_failed", { path, status: response.status, serverOrigin: new URL(settings.serverUrl).origin, message });
+    await recordDiagnostic("catalog_request_failed", { path, serverOrigin: new URL(settings.serverUrl).origin, message, response: diagnosticResponse(response, responseText) });
     throw new Error(message);
   }
   return result;
