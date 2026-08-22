@@ -8,7 +8,7 @@ A Chrome/Edge Manifest V3 extension for creating a traceable Multica knowledge-c
 
 1. Open `chrome://extensions` (or `edge://extensions`) and enable Developer mode.
 2. Choose **Load unpacked** and select this directory.
-3. Open **Settings** from the extension, enter the Multica server URL, personal access token, destination project UUID, and destination agent UUID, then save.
+3. Open **Settings** from the extension, enter the Multica server URL and personal access token, then add one or more domain destinations with their project UUID and agent UUID. Use `*` for a default destination.
 4. On an `http`/`https` article page, open the extension and select **Create capture issue**.
 
 ## Privacy and permissions
@@ -16,7 +16,7 @@ A Chrome/Edge Manifest V3 extension for creating a traceable Multica knowledge-c
 The manifest requests only:
 
 - `activeTab` and `scripting`, to read the URL/title and, only after an explicit checkbox confirmation, optional selected text or a page-text snapshot from the page the user explicitly opens the extension on;
-- `storage`, to retain the user's server URL, token, selected project, and selected agent locally in the browser profile.
+- `storage`, to retain the user's server URL, token, and domain-specific destinations locally in the browser profile.
 
 The server origin is an *optional* permission requested only after the user saves that specific server URL; it is required for the issue-creation request. There are no install-time host permissions or persistent content scripts. By default, link mode submits only URL, title, site hostname, capture timestamp, and the optional note entered in the popup. Selected text and a page-text snapshot are separate opt-ins; snapshot extraction starts only after the user checks its explicit confirmation. If extraction fails or produces no text, the issue is created in link mode and the popup reports the fallback.
 
@@ -46,7 +46,7 @@ The server should create an issue in `project_id`, persist `source` where custom
 
 ### Authorization and project selection
 
-M1 uses a user-provided personal access token, project UUID, and agent UUID. The dedicated settings page is opened from the popup and keeps the capture flow focused on the current page. A future server-backed OAuth or project/agent picker can replace these inputs without changing the capture payload. Tokens are never placed in an issue or page request and are stored only using `chrome.storage.local`.
+M1 uses a user-provided personal access token and domain-specific project UUID/agent UUID pairs. The settings page accepts exact domains (`example.com`), subdomain wildcards (`*.example.com`), and a default (`*`). Capture selects an exact domain first, then the most specific matching wildcard, then the default. Existing single project/agent settings are migrated in memory to a `*` default when the extension first reads them. Tokens are never placed in an issue or page request and are stored only using `chrome.storage.local`.
 
 ## Scope
 

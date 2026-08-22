@@ -9,7 +9,7 @@
   <body>
     <main>
       <h1>Multica Knowledge Capture settings</h1>
-      <p class="intro">Configure where new knowledge-capture issues are created and which agent receives them.</p>
+      <p class="intro">Configure the Multica connection, then choose a project and agent for each site you capture from.</p>
       <form id="settings-form">
         <label for="server-url">Multica server URL</label>
         <input id="server-url" type="url" placeholder="https://multica.example.com" autocomplete="url" required>
@@ -18,17 +18,32 @@
         <input id="access-token" type="password" placeholder="Paste a personal access token" autocomplete="off" required>
         <p class="hint">Stored only in this browser's extension storage and sent only to the configured Multica server.</p>
 
-        <label for="project-id">Project ID</label>
-        <input id="project-id" type="text" placeholder="Project UUID" autocomplete="off" required>
-
-        <label for="agent-id">Agent ID</label>
-        <input id="agent-id" type="text" placeholder="Agent UUID" autocomplete="off" required>
-        <p class="hint">Every capture is created in this project and assigned to this agent.</p>
+        <section class="destinations" aria-labelledby="destinations-heading">
+          <h2 id="destinations-heading">Capture destinations</h2>
+          <p class="hint">Use an exact domain such as <code>example.com</code>, <code>*.example.com</code> for subdomains, or <code>*</code> as the default.</p>
+          <div id="destination-list"></div>
+          <button id="add-destination" type="button">Add domain destination</button>
+        </section>
 
         <button type="submit">Save settings</button>
         <p id="status" role="status" aria-live="polite"></p>
       </form>
     </main>
+    <template id="destination-template">
+      <fieldset class="destination">
+        <legend>Domain destination</legend>
+        <label>Domain
+          <input class="destination-domain" type="text" placeholder="example.com or *" autocomplete="off" required>
+        </label>
+        <label>Project ID
+          <input class="destination-project-id" type="text" placeholder="Project UUID" autocomplete="off" required>
+        </label>
+        <label>Agent ID
+          <input class="destination-agent-id" type="text" placeholder="Agent UUID" autocomplete="off" required>
+        </label>
+        <button class="remove-destination" type="button">Remove</button>
+      </fieldset>
+    </template>
     <script src="options.js"></script>
   </body>
 </html>
