@@ -33,8 +33,8 @@ function destinationSelects(element) {
 
 function populateDestination(element, destination = {}) {
   const { project, agent } = destinationSelects(element);
-  setOptions(project, catalog.projects, destination.projectId || element.dataset.projectId || project.value, "Select a project");
-  setOptions(agent, catalog.agents, destination.agentId || element.dataset.agentId || agent.value, "Select an agent");
+  setOptions(project, catalog.projects, destination.projectId || element.dataset.projectId || project.value, t("selectProject"));
+  setOptions(agent, catalog.agents, destination.agentId || element.dataset.agentId || agent.value, t("selectAgent"));
 }
 
 function addDestination(destination = {}) {
@@ -51,6 +51,7 @@ function addDestination(destination = {}) {
   });
   destinationElement.querySelector(".remove-destination").addEventListener("click", (event) => event.currentTarget.closest(".destination").remove());
   byId("destination-list").append(fragment);
+  applyLanguage(byId("language").value || "en");
   populateDestination(byId("destination-list").lastElementChild, destination);
 }
 
@@ -67,7 +68,7 @@ async function requestServerPermission(serverUrl, requestPermission) {
   const granted = requestPermission
     ? await chrome.permissions.request({ origins })
     : await chrome.permissions.contains({ origins });
-  if (!granted) throw new Error("Server access permission is required to load destinations.");
+  if (!granted) throw new Error(t("serverAccessRequired"));
 }
 
 async function fetchApi(path, settings) {
@@ -98,18 +99,18 @@ async function loadWorkspaceCatalog(settings, selectedWorkspaceId) {
 
 async function loadDestinations(requestPermission = true) {
   const settings = connectionSettings();
-  if (!settings.serverUrl || !settings.accessToken) throw new Error("Enter the Multica server URL and access token first.");
+  if (!settings.serverUrl || !settings.accessToken) throw new Error(t("enterServer"));
   await requestServerPermission(settings.serverUrl, requestPermission);
-  setStatus("Loading workspaces, projects, and agents…");
+  setStatus(t("loadDestinations") + "…");
   catalog.workspaces = await fetchApi("/api/workspaces", settings);
-  if (!Array.isArray(catalog.workspaces) || !catalog.workspaces.length) throw new Error("No accessible workspaces were found.");
+  if (!Array.isArray(catalog.workspaces) || !catalog.workspaces.length) throw new Error(t("noWorkspaces"));
   const workspaceSelect = byId("workspace-id");
   const previousWorkspaceId = workspaceSelect.value || savedWorkspaceId;
-  setOptions(workspaceSelect, catalog.workspaces, previousWorkspaceId, "Select a workspace");
+  setOptions(workspaceSelect, catalog.workspaces, previousWorkspaceId, t("selectWorkspace"));
   if (!workspaceSelect.value) workspaceSelect.value = catalog.workspaces[0].id;
   savedWorkspaceId = workspaceSelect.value;
   await loadWorkspaceCatalog(settings);
-  setStatus("Destinations loaded. Select a workspace, project, and agent.", "success");
+  setStatus(t("destinationsLoaded"), "success");
 }
 
 function destinationsFromForm() {
@@ -123,6 +124,8 @@ function destinationsFromForm() {
 async function loadSettings() {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
   const settings = stored[SETTINGS_KEY] || {};
+  byId("language").value = settings.language || "en";
+  applyLanguage(byId("language").value);
   byId("server-url").value = settings.serverUrl || "";
   byId("access-token").value = settings.accessToken || "";
   savedWorkspaceId = settings.workspaceId || "";
@@ -131,7 +134,7 @@ async function loadSettings() {
     : [{ domain: "*" }]);
   destinations.forEach(addDestination);
   if (settings.serverUrl && settings.accessToken) {
-    loadDestinations(false).catch(() => setStatus("Load destinations to choose a workspace, project, and agent."));
+    loadDestinations(false).catch(() => setStatus(t("loadToChoose")));
   }
 }
 
@@ -139,25 +142,26 @@ async function saveSettings(event) {
   event.preventDefault();
   const destinations = destinationsFromForm();
   if (!destinations.length || destinations.some(({ domain, projectId, agentId }) => !domain || !projectId || !agentId)) {
-    throw new Error("Add a domain, project ID, and agent ID for every destination.");
+    throw new Error(t("incompleteDestination"));
   }
   if (destinations.some(({ domain }) => domain !== "*" && !/^(?:\*\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$/.test(domain))) {
-    throw new Error("Domains must be hostnames, *.hostnames, or *.");
+    throw new Error(t("invalidDomain"));
   }
   if (new Set(destinations.map(({ domain }) => domain)).size !== destinations.length) {
-    throw new Error("Each domain can have only one destination.");
+    throw new Error(t("duplicateDomain"));
   }
   const settings = {
     ...connectionSettings(),
+    language: byId("language").value,
     workspaceId: byId("workspace-id").value,
     destinations
   };
-  if (!settings.workspaceId) throw new Error("Load destinations and select a workspace first.");
+  if (!settings.workspaceId) throw new Error(t("selectWorkspace"));
   const serverUrl = new URL(settings.serverUrl);
   const granted = await chrome.permissions.request({ origins: [`${serverUrl.origin}/*`] });
-  if (!granted) throw new Error("Server access permission is required to create issues.");
+  if (!granted) throw new Error(t("createPermission"));
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-  setStatus("Settings saved.", "success");
+  setStatus(t("settingsSaved"), "success");
 }
 
 byId("settings-form").addEventListener("submit", (event) => saveSettings(event).catch((error) => setStatus(error.message, "error")));
@@ -166,5 +170,9 @@ byId("load-destinations").addEventListener("click", () => loadDestinations().cat
 byId("workspace-id").addEventListener("change", () => {
   savedWorkspaceId = byId("workspace-id").value;
   loadWorkspaceCatalog(connectionSettings()).catch((error) => setStatus(error.message, "error"));
+});
+byId("language").addEventListener("change", () => {
+  applyLanguage(byId("language").value);
+  document.querySelectorAll(".destination").forEach((element) => populateDestination(element));
 });
 loadSettings().catch((error) => setStatus(error.message, "error"));
