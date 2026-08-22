@@ -33,19 +33,12 @@
   "title": "Knowledge capture: Example article",
   "description": "可供阅读和追溯的来源字段",
   "project_id": "目标项目 UUID",
-  "assignee_id": "目标 Agent UUID",
-  "source": {
-    "url": "https://example.com/article",
-    "title": "Example article",
-    "site": "example.com",
-    "captured_at": "2026-08-22T00:00:00.000Z",
-    "capture_mode": "link",
-    "body_snapshot": null
-  }
+  "assignee_type": "agent",
+  "assignee_id": "目标 Agent UUID"
 }
 ```
 
-服务端应在 `project_id` 对应项目中创建 issue；若支持结构化自定义字段，应持久化 `source`。接口返回 issue 对象（或 `{ "issue": issue }`），其中至少包含 `id` 或 `identifier`。来源信息同时写入 `description`，确保尚未支持结构化字段的服务端也能保留可追溯记录。
+服务端应在 `project_id` 对应项目中创建并分配给该 Agent；`assignee_type` 与 `assignee_id` 必须同时提供。接口返回 issue 对象（或 `{ "issue": issue }`），其中至少包含 `id` 或 `identifier`。来源信息写入 `description`，确保采集记录可追溯。
 
 ### 授权与项目选择
 
