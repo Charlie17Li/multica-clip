@@ -1,5 +1,6 @@
 const SETTINGS_KEY = "multicaCaptureSettings";
 let page = null;
+let settings = {};
 
 const byId = (id) => document.getElementById(id);
 
@@ -11,6 +12,20 @@ function setStatus(message, kind = "") {
   const element = byId("status");
   element.textContent = message;
   element.className = kind;
+}
+
+function optionLabel(record) {
+  return record.title || record.name || record.slug || record.id;
+}
+
+function setOptions(select, records, selectedId, placeholder) {
+  select.replaceChildren(new Option(placeholder, ""));
+  records.forEach((record) => select.add(new Option(optionLabel(record), record.id)));
+  if (selectedId && !records.some((record) => record.id === selectedId)) {
+    select.add(new Option(selectedId, selectedId));
+  }
+  select.value = selectedId || "";
+  select.disabled = select.options.length <= 1;
 }
 
 function escapeMarkdown(value) {
@@ -101,12 +116,43 @@ async function readCurrentPage() {
   byId("page-site").textContent = page.site;
 }
 
+async function loadDestinationPicker() {
+  const defaultDestination = destinationForHostname(settings, page.site);
+  if (!defaultDestination?.projectId || !defaultDestination?.agentId) {
+    throw new Error(t("configureFirst", { site: page.site }));
+  }
+  const projectSelect = byId("project-id");
+  const agentSelect = byId("agent-id");
+  setOptions(projectSelect, [], defaultDestination.projectId, t("selectProject"));
+  setOptions(agentSelect, [], defaultDestination.agentId, t("selectAgent"));
+
+  if (!settings.serverUrl || !settings.accessToken || !settings.workspaceId) return;
+  const serverUrl = normalizedServerUrl(settings.serverUrl);
+  const query = `?workspace_id=${encodeURIComponent(settings.workspaceId)}`;
+  try {
+    const [projectsResponse, agentsResponse] = await Promise.all([
+      fetch(`${serverUrl}/api/projects${query}`, { headers: { Authorization: `Bearer ${settings.accessToken}` } }),
+      fetch(`${serverUrl}/api/agents${query}`, { headers: { Authorization: `Bearer ${settings.accessToken}` } })
+    ]);
+    const [projectsPayload, agentsPayload] = await Promise.all([
+      projectsResponse.json().catch(() => ({})),
+      agentsResponse.json().catch(() => ({}))
+    ]);
+    if (!projectsResponse.ok || !agentsResponse.ok) throw new Error("catalog unavailable");
+    const projects = projectsPayload.projects || [];
+    const agents = Array.isArray(agentsPayload) ? agentsPayload : agentsPayload.agents || [];
+    setOptions(projectSelect, projects, defaultDestination.projectId, t("selectProject"));
+    setOptions(agentSelect, agents, defaultDestination.agentId, t("selectAgent"));
+  } catch (_) {
+    // Keep the configured destination usable when the optional picker catalog cannot load.
+  }
+}
+
 async function createIssue() {
   if (!page) return;
-  const stored = await chrome.storage.local.get(SETTINGS_KEY);
-  const settings = stored[SETTINGS_KEY] || {};
-  const destination = destinationForHostname(settings, page.site);
-  if (!settings.serverUrl || !settings.accessToken || !destination?.projectId || !destination?.agentId) {
+  const projectId = byId("project-id").value;
+  const agentId = byId("agent-id").value;
+  if (!settings.serverUrl || !settings.accessToken || !projectId || !agentId) {
     throw new Error(t("configureFirst", { site: page.site }));
   }
   const serverOrigin = new URL(normalizedServerUrl(settings.serverUrl)).origin;
@@ -132,7 +178,7 @@ async function createIssue() {
         "Authorization": `Bearer ${settings.accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(issuePayload(page, byId("note").value, destination.projectId, destination.agentId, content.snapshot))
+      body: JSON.stringify(issuePayload(page, byId("note").value, projectId, agentId, content.snapshot))
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
@@ -158,8 +204,10 @@ byId("capture-button").addEventListener("click", () => createIssue().catch((erro
 
 async function initializePopup() {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
-  applyLanguage(stored[SETTINGS_KEY]?.language || "en");
+  settings = stored[SETTINGS_KEY] || {};
+  applyLanguage(settings.language || "en");
   await readCurrentPage();
+  await loadDestinationPicker();
 }
 
 initializePopup().catch((error) => setStatus(error.message, "error"));

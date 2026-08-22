@@ -9,7 +9,7 @@
 1. 打开 `chrome://extensions`（或 `edge://extensions`），开启开发者模式。
 2. 点击“加载已解压的扩展程序”，选择本目录。
 3. 从扩展弹窗打开“设置”，填写 Multica 服务地址和个人访问令牌，再加载并选择工作区、项目和 Agent，为各域名添加目标后保存；无需手动填写 UUID。使用 `*` 可设置默认目标。
-4. 在任意 `http` / `https` 文章页打开扩展，点击“创建采集 issue”。
+4. 在任意 `http` / `https` 文章页打开扩展。弹窗默认显示当前站点匹配的项目和 Agent；如有需要，可仅对此次采集临时调整，再点击“创建采集 issue”。
 
 可在“设置”的“语言”中切换 English / 中文；该选择会同时应用于设置页和采集弹窗。
 
@@ -49,7 +49,7 @@
 
 ### 授权与项目选择
 
-M1 使用用户提供的个人访问令牌，以及按域名配置的项目 / Agent 组合。用户授权访问配置的服务器后，设置页通过 `GET /api/workspaces`、`GET /api/projects?workspace_id=…` 和 `GET /api/agents?workspace_id=…` 加载可读名称，用户无需手动填写 UUID。设置页支持精确域名（`example.com`）、子域名通配符（`*.example.com`）和默认目标（`*`）；采集时依次匹配精确域名、最具体的通配符和默认目标。令牌不会写入 issue 或页面请求，只保存在 `chrome.storage.local` 中。
+M1 使用用户提供的个人访问令牌，以及按域名配置的项目 / Agent 组合。用户授权访问配置的服务器后，设置页通过 `GET /api/workspaces`、`GET /api/projects?workspace_id=…` 和 `GET /api/agents?workspace_id=…` 加载可读名称，用户无需手动填写 UUID。设置页支持精确域名（`example.com`）、子域名通配符（`*.example.com`）和默认目标（`*`）；采集时依次匹配精确域名、最具体的通配符和默认目标，并在弹窗中显示。用户可在弹窗内临时修改项目或 Agent，不会改写已保存的域名目标。令牌不会写入 issue 或页面请求，只保存在 `chrome.storage.local` 中。
 
 ## 当前范围
 
