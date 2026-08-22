@@ -2,11 +2,16 @@
 body { margin: 0; }
 main { margin: 40px auto; max-width: 560px; padding: 0 24px; }
 h1 { font-size: 24px; margin: 0 0 8px; }
+h2 { font-size: 18px; margin: 28px 0 4px; }
 .intro { color: #667085; line-height: 1.5; margin: 0 0 28px; }
 form { max-width: 460px; }
 label { display: block; font-size: 14px; font-weight: 600; margin: 18px 0 6px; }
 input { box-sizing: border-box; font: inherit; padding: 9px; width: 100%; }
 button { cursor: pointer; font: inherit; margin-top: 22px; padding: 9px 12px; }
+.destinations > button { margin-top: 12px; }
+.destination { border: 1px solid #98a2b3; margin: 16px 0; padding: 0 16px 16px; }
+.destination legend { font-weight: 600; padding: 0 4px; }
+.destination .remove-destination { margin-top: 14px; }
 .hint { color: #667085; font-size: 13px; line-height: 1.4; margin: 6px 0 0; }
 #status { font-size: 14px; min-height: 1.4em; }
 #status.error { color: #b42318; }

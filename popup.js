@@ -56,6 +56,20 @@ function issuePayload(source, note, projectId, agentId, selection, snapshot) {
   };
 }
 
+function destinationForHostname(settings, hostname) {
+  const destinations = settings.destinations || (settings.projectId && settings.agentId
+    ? [{ domain: "*", projectId: settings.projectId, agentId: settings.agentId }]
+    : []);
+  const normalizedHostname = hostname.toLowerCase().replace(/\.+$/, "");
+  const exact = destinations.find(({ domain }) => domain === normalizedHostname);
+  if (exact) return exact;
+  const wildcard = destinations
+    .filter(({ domain }) => domain.startsWith("*."))
+    .sort((left, right) => right.domain.length - left.domain.length)
+    .find(({ domain }) => normalizedHostname.endsWith(domain.slice(1)) && normalizedHostname !== domain.slice(2));
+  return wildcard || destinations.find(({ domain }) => domain === "*");
+}
+
 async function readOptionalPageContent(includeSelection, includeSnapshot) {
   if (!includeSelection && !includeSnapshot) return { selection: "", snapshot: "", snapshotFallback: false };
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -95,8 +109,9 @@ async function createIssue() {
   if (!page) return;
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
   const settings = stored[SETTINGS_KEY] || {};
-  if (!settings.serverUrl || !settings.accessToken || !settings.projectId || !settings.agentId) {
-    throw new Error("Configure the Multica server, token, project, and agent in Settings first.");
+  const destination = destinationForHostname(settings, page.site);
+  if (!settings.serverUrl || !settings.accessToken || !destination?.projectId || !destination?.agentId) {
+    throw new Error(`Configure a Multica destination for ${page.site} in Settings first.`);
   }
   const serverOrigin = new URL(normalizedServerUrl(settings.serverUrl)).origin;
   const hasServerPermission = await chrome.permissions.contains({ origins: [`${serverOrigin}/*`] });
@@ -122,7 +137,7 @@ async function createIssue() {
         "Authorization": `Bearer ${settings.accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(issuePayload(page, byId("note").value, settings.projectId, settings.agentId, content.selection, content.snapshot))
+      body: JSON.stringify(issuePayload(page, byId("note").value, destination.projectId, destination.agentId, content.selection, content.snapshot))
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
