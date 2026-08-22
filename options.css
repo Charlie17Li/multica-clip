@@ -1,0 +1,13 @@
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+body { margin: 0; }
+main { margin: 40px auto; max-width: 560px; padding: 0 24px; }
+h1 { font-size: 24px; margin: 0 0 8px; }
+.intro { color: #667085; line-height: 1.5; margin: 0 0 28px; }
+form { max-width: 460px; }
+label { display: block; font-size: 14px; font-weight: 600; margin: 18px 0 6px; }
+input { box-sizing: border-box; font: inherit; padding: 9px; width: 100%; }
+button { cursor: pointer; font: inherit; margin-top: 22px; padding: 9px 12px; }
+.hint { color: #667085; font-size: 13px; line-height: 1.4; margin: 6px 0 0; }
+#status { font-size: 14px; min-height: 1.4em; }
+#status.error { color: #b42318; }
+#status.success { color: #027a48; }

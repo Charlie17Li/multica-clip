@@ -35,11 +35,12 @@ function issueDescription(source, note, selection, snapshot) {
   return [fields.join("\n"), fencedSection("User note", note), fencedSection("Selected text", selection), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
 }
 
-function issuePayload(source, note, projectId, selection, snapshot) {
+function issuePayload(source, note, projectId, agentId, selection, snapshot) {
   return {
     title: `Knowledge capture: ${source.title || source.site}`,
     description: issueDescription(source, note, selection, snapshot),
     project_id: projectId,
+    assignee_id: agentId,
     // The structured source object is deliberately duplicated in the request.
     // Server implementations that support custom properties may persist it;
     // the Markdown description keeps the issue traceable on older servers.
@@ -75,29 +76,6 @@ async function readOptionalPageContent(includeSelection, includeSnapshot) {
   return { selection: result.selection, snapshot: result.snapshot, snapshotFallback: false };
 }
 
-async function loadSettings() {
-  const stored = await chrome.storage.local.get(SETTINGS_KEY);
-  const settings = stored[SETTINGS_KEY] || {};
-  byId("server-url").value = settings.serverUrl || "";
-  byId("access-token").value = settings.accessToken || "";
-  byId("project-id").value = settings.projectId || "";
-}
-
-async function saveSettings() {
-  const settings = {
-    serverUrl: normalizedServerUrl(byId("server-url").value),
-    accessToken: byId("access-token").value.trim(),
-    projectId: byId("project-id").value.trim()
-  };
-  if (settings.serverUrl) {
-    const origin = new URL(settings.serverUrl).origin;
-    const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
-    if (!granted) throw new Error("Server access permission is required to create issues.");
-  }
-  await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-  setStatus("Authorization settings saved.", "success");
-}
-
 async function readCurrentPage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.url || !/^https?:/.test(tab.url)) throw new Error("Open an http(s) page to capture it.");
@@ -117,10 +95,8 @@ async function createIssue() {
   if (!page) return;
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
   const settings = stored[SETTINGS_KEY] || {};
-  if (!settings.serverUrl || !settings.accessToken || !settings.projectId) {
-    byId("settings").hidden = false;
-    byId("settings-button").setAttribute("aria-expanded", "true");
-    throw new Error("Configure the Multica server, token, and target project first.");
+  if (!settings.serverUrl || !settings.accessToken || !settings.projectId || !settings.agentId) {
+    throw new Error("Configure the Multica server, token, project, and agent in Settings first.");
   }
   const serverOrigin = new URL(normalizedServerUrl(settings.serverUrl)).origin;
   const hasServerPermission = await chrome.permissions.contains({ origins: [`${serverOrigin}/*`] });
@@ -146,7 +122,7 @@ async function createIssue() {
         "Authorization": `Bearer ${settings.accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(issuePayload(page, byId("note").value, settings.projectId, content.selection, content.snapshot))
+      body: JSON.stringify(issuePayload(page, byId("note").value, settings.projectId, settings.agentId, content.selection, content.snapshot))
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
@@ -167,12 +143,7 @@ async function createIssue() {
   }
 }
 
-byId("settings-button").addEventListener("click", () => {
-  const panel = byId("settings");
-  panel.hidden = !panel.hidden;
-  byId("settings-button").setAttribute("aria-expanded", String(!panel.hidden));
-});
-byId("save-settings").addEventListener("click", () => saveSettings().catch((error) => setStatus(error.message, "error")));
+byId("settings-button").addEventListener("click", () => chrome.runtime.openOptionsPage());
 byId("capture-button").addEventListener("click", () => createIssue().catch((error) => setStatus(error.message, "error")));
 
-Promise.all([loadSettings(), readCurrentPage()]).catch((error) => setStatus(error.message, "error"));
+readCurrentPage().catch((error) => setStatus(error.message, "error"));

@@ -10,22 +10,8 @@
     <main>
       <header>
         <h1>Capture to Multica</h1>
-        <button id="settings-button" type="button" aria-expanded="false">Settings</button>
+        <button id="settings-button" type="button">Settings</button>
       </header>
-
-      <section id="settings" hidden>
-        <label>Multica server URL
-          <input id="server-url" type="url" placeholder="https://multica.example.com" autocomplete="url">
-        </label>
-        <label>Access token
-          <input id="access-token" type="password" placeholder="Paste a personal access token" autocomplete="off">
-        </label>
-        <label>Target project ID
-          <input id="project-id" type="text" placeholder="Project UUID" autocomplete="off">
-        </label>
-        <button id="save-settings" type="button">Save authorization</button>
-        <p class="hint">The token remains in this browser's extension storage and is sent only to the configured Multica server.</p>
-      </section>
 
       <section aria-labelledby="source-heading">
         <h2 id="source-heading">Current page</h2>
