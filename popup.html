@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Multica Knowledge Capture</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Capture to Multica</h1>
+        <button id="settings-button" type="button" aria-expanded="false">Settings</button>
+      </header>
+
+      <section id="settings" hidden>
+        <label>Multica server URL
+          <input id="server-url" type="url" placeholder="https://multica.example.com" autocomplete="url">
+        </label>
+        <label>Access token
+          <input id="access-token" type="password" placeholder="Paste a personal access token" autocomplete="off">
+        </label>
+        <label>Target project ID
+          <input id="project-id" type="text" placeholder="Project UUID" autocomplete="off">
+        </label>
+        <button id="save-settings" type="button">Save authorization</button>
+        <p class="hint">The token remains in this browser's extension storage and is sent only to the configured Multica server.</p>
+      </section>
+
+      <section aria-labelledby="source-heading">
+        <h2 id="source-heading">Current page</h2>
+        <dl>
+          <dt>Title</dt><dd id="page-title">Loading…</dd>
+          <dt>URL</dt><dd id="page-url">Loading…</dd>
+          <dt>Site</dt><dd id="page-site">Loading…</dd>
+        </dl>
+      </section>
+
+      <label for="note">Note <span>(optional)</span></label>
+      <textarea id="note" rows="4" placeholder="Why is this worth keeping?"></textarea>
+      <p class="privacy">Link mode only: this extension does not read or upload page text, selections, cookies, or screenshots.</p>
+      <button id="capture-button" type="button">Create link-mode issue</button>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
