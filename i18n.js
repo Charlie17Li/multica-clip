@@ -22,7 +22,8 @@ const translations = {
     serverAccessRequired: "Server access permission is required to load destinations.", enterServer: "Enter the Multica server URL and access token first.",
     noWorkspaces: "No accessible workspaces were found.", loadToChoose: "Load destinations to choose a workspace, project, and agent.",
     incompleteDestination: "Add a domain, project ID, and agent ID for every destination.", invalidDomain: "Domains must be hostnames, *.hostnames, or *.", duplicateDomain: "Each domain can have only one destination.",
-    selectWorkspace: "Load destinations and select a workspace first.", createPermission: "Server access permission is required to create issues."
+    selectWorkspace: "Load destinations and select a workspace first.", createPermission: "Server access permission is required to create issues.",
+    copyDiagnostics: "Copy diagnostic report", diagnosticsCopied: "Diagnostic report copied. You can safely include it in a support request.", diagnosticsHelp: "Include the copied report when asking for help. It excludes your token, note, snapshot, and page URL."
   },
   "zh-CN": {
     popupTitle: "Multica 知识采集", captureToMultica: "采集到 Multica", settings: "设置",
@@ -47,7 +48,8 @@ const translations = {
     serverAccessRequired: "加载目标需要授予服务器访问权限。", enterServer: "请先输入 Multica 服务器网址和访问令牌。",
     noWorkspaces: "未找到可访问的工作区。", loadToChoose: "请加载目标以选择工作区、项目和 Agent。",
     incompleteDestination: "请为每个目标填写域名、项目 ID 和 Agent ID。", invalidDomain: "域名必须是主机名、*.主机名或 *。", duplicateDomain: "每个域名只能有一个目标。",
-    selectWorkspace: "请先加载目标并选择工作区。", createPermission: "创建 issue 需要授予服务器访问权限。"
+    selectWorkspace: "请先加载目标并选择工作区。", createPermission: "创建 issue 需要授予服务器访问权限。",
+    copyDiagnostics: "复制诊断报告", diagnosticsCopied: "诊断报告已复制，可安全附在求助信息中。", diagnosticsHelp: "求助时请附上复制的报告；其中不包含令牌、备注、快照或页面网址。"
   }
 };
 

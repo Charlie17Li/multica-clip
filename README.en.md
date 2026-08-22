@@ -53,6 +53,12 @@ Choose English or Chinese from the Language setting. The preference applies to b
 
 The popup preserves the note and opt-in choices after an API failure, so the user can correct settings/network access and submit again. A successful response exposes an issue link when the API returns an issue URL or ID.
 
+## Troubleshooting and reporting
+
+When an error occurs, the popup or Settings page shows **Copy diagnostic report**. Check the displayed error first (the usual causes are server permission, network, token, or destination configuration), then attach the copied report to a Multica issue or support request. It contains only the latest 20 timestamps, extension version, browser information, event type, HTTP status, and server origin; it **never includes** an access token, note, page snapshot, or full page URL.
+
+To reproduce a problem, enable Developer mode in `chrome://extensions` / `edge://extensions`, select **Inspect views** for the extension to open the popup console, and use the extension **Details** page to inspect errors. A deliberately invalid token, revoked server-site permission, or unreachable test server reproduces authentication, permission, and network errors respectively. Never paste a real token or page snapshot into DevTools or an issue.
+
 ## Knowledge-base archiving
 
 The follow-up agent contract, including source fields, deduplication, PARA placement, Git traceability, and the issue reply format, is documented in [docs/archiving-agent.md](docs/archiving-agent.md).

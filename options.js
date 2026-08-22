@@ -13,6 +13,18 @@ function setStatus(message, kind = "") {
   element.className = kind;
 }
 
+function showDiagnostics() {
+  byId("copy-diagnostics").hidden = false;
+  byId("diagnostics-help").hidden = false;
+}
+
+async function reportError(event, error) {
+  const message = safeDiagnosticText(error?.message);
+  await recordDiagnostic(event, { message });
+  setStatus(message, "error");
+  showDiagnostics();
+}
+
 function optionLabel(record) {
   return record.title || record.name || record.slug || record.id;
 }
@@ -75,8 +87,11 @@ async function fetchApi(path, settings) {
   const response = await fetch(`${settings.serverUrl}${path}`, {
     headers: { "Authorization": `Bearer ${settings.accessToken}` }
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
+  if (!response.ok) {
+    const message = `Multica returned ${response.status}.`;
+    await recordDiagnostic("catalog_request_failed", { path, status: response.status, serverOrigin: new URL(settings.serverUrl).origin, message });
+    throw new Error(message);
+  }
   return result;
 }
 
@@ -164,15 +179,16 @@ async function saveSettings(event) {
   setStatus(t("settingsSaved"), "success");
 }
 
-byId("settings-form").addEventListener("submit", (event) => saveSettings(event).catch((error) => setStatus(error.message, "error")));
+byId("settings-form").addEventListener("submit", (event) => saveSettings(event).catch((error) => reportError("settings_save_failed", error)));
 byId("add-destination").addEventListener("click", () => addDestination());
-byId("load-destinations").addEventListener("click", () => loadDestinations().catch((error) => setStatus(error.message, "error")));
+byId("load-destinations").addEventListener("click", () => loadDestinations().catch((error) => reportError("destinations_load_failed", error)));
+byId("copy-diagnostics").addEventListener("click", () => copyDiagnosticReport().then(() => setStatus(t("diagnosticsCopied"), "success")).catch((error) => reportError("diagnostics_copy_failed", error)));
 byId("workspace-id").addEventListener("change", () => {
   savedWorkspaceId = byId("workspace-id").value;
-  loadWorkspaceCatalog(connectionSettings()).catch((error) => setStatus(error.message, "error"));
+  loadWorkspaceCatalog(connectionSettings()).catch((error) => reportError("workspace_catalog_failed", error));
 });
 byId("language").addEventListener("change", () => {
   applyLanguage(byId("language").value);
   document.querySelectorAll(".destination").forEach((element) => populateDestination(element));
 });
-loadSettings().catch((error) => setStatus(error.message, "error"));
+loadSettings().catch((error) => reportError("settings_initialize_failed", error));

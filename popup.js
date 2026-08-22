@@ -14,6 +14,18 @@ function setStatus(message, kind = "") {
   element.className = kind;
 }
 
+function showDiagnostics() {
+  byId("copy-diagnostics").hidden = false;
+  byId("diagnostics-help").hidden = false;
+}
+
+async function reportError(event, error) {
+  const message = safeDiagnosticText(error?.message);
+  await recordDiagnostic(event, { message, pageHost: page?.site || "" });
+  setStatus(message, "error");
+  showDiagnostics();
+}
+
 function optionLabel(record) {
   return record.title || record.name || record.slug || record.id;
 }
@@ -181,7 +193,11 @@ async function createIssue() {
       body: JSON.stringify(issuePayload(page, byId("note").value, projectId, agentId, content.snapshot))
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
+    if (!response.ok) {
+      const message = `Multica returned ${response.status}.`;
+      await recordDiagnostic("issue_create_failed", { status: response.status, serverOrigin, message });
+      throw new Error(message);
+    }
     const issue = result.issue || result;
     const reference = issue.identifier || issue.id || "issue";
     setStatus(t("created", { reference, fallback: content.snapshotFallback ? t("snapshotFallback") : "." }), "success");
@@ -194,13 +210,15 @@ async function createIssue() {
       link.textContent = t("openCreatedIssue");
       byId("result").append(link);
     }
+    await recordDiagnostic("issue_created", { serverOrigin });
   } finally {
     button.disabled = false;
   }
 }
 
 byId("settings-button").addEventListener("click", () => chrome.runtime.openOptionsPage());
-byId("capture-button").addEventListener("click", () => createIssue().catch((error) => setStatus(error.message, "error")));
+byId("copy-diagnostics").addEventListener("click", () => copyDiagnosticReport().then(() => setStatus(t("diagnosticsCopied"), "success")).catch((error) => reportError("diagnostics_copy_failed", error)));
+byId("capture-button").addEventListener("click", () => createIssue().catch((error) => reportError("capture_failed", error)));
 
 async function initializePopup() {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
@@ -210,4 +228,4 @@ async function initializePopup() {
   await loadDestinationPicker();
 }
 
-initializePopup().catch((error) => setStatus(error.message, "error"));
+initializePopup().catch((error) => reportError("popup_initialize_failed", error));

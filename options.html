@@ -36,6 +36,8 @@
 
         <button type="submit" data-i18n="saveSettings">Save settings</button>
         <p id="status" role="status" aria-live="polite"></p>
+        <button id="copy-diagnostics" type="button" hidden data-i18n="copyDiagnostics">Copy diagnostic report</button>
+        <p id="diagnostics-help" class="hint" hidden data-i18n="diagnosticsHelp">Include the copied report when asking for help. It excludes your token, note, snapshot, and page URL.</p>
       </form>
     </main>
     <template id="destination-template">
@@ -58,6 +60,7 @@
       </fieldset>
     </template>
     <script src="i18n.js"></script>
+    <script src="diagnostics.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
