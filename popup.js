@@ -92,7 +92,7 @@ async function readOptionalPageContent(includeSelection, includeSnapshot) {
 
 async function readCurrentPage() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url || !/^https?:/.test(tab.url)) throw new Error("Open an http(s) page to capture it.");
+  if (!tab?.url || !/^https?:/.test(tab.url)) throw new Error(t("openHttpPage"));
   const url = new URL(tab.url);
   page = {
     url: tab.url,
@@ -111,15 +111,15 @@ async function createIssue() {
   const settings = stored[SETTINGS_KEY] || {};
   const destination = destinationForHostname(settings, page.site);
   if (!settings.serverUrl || !settings.accessToken || !destination?.projectId || !destination?.agentId) {
-    throw new Error(`Configure a Multica destination for ${page.site} in Settings first.`);
+    throw new Error(t("configureFirst", { site: page.site }));
   }
   const serverOrigin = new URL(normalizedServerUrl(settings.serverUrl)).origin;
   const hasServerPermission = await chrome.permissions.contains({ origins: [`${serverOrigin}/*`] });
-  if (!hasServerPermission) throw new Error("Save authorization settings to grant access to this Multica server.");
+  if (!hasServerPermission) throw new Error(t("saveAuthorization"));
   const button = byId("capture-button");
   button.disabled = true;
   byId("result").replaceChildren();
-  setStatus("Preparing capture…");
+  setStatus(t("preparing"));
   try {
     const includeSelection = byId("include-selection").checked;
     const includeSnapshot = byId("include-snapshot").checked;
@@ -130,7 +130,7 @@ async function createIssue() {
       if (!includeSnapshot) throw error;
       content = { selection: "", snapshot: "", snapshotFallback: true };
     }
-    setStatus("Creating issue…");
+    setStatus(t("creating"));
     const response = await fetch(`${normalizedServerUrl(settings.serverUrl)}/api/issues`, {
       method: "POST",
       headers: {
@@ -143,14 +143,14 @@ async function createIssue() {
     if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
     const issue = result.issue || result;
     const reference = issue.identifier || issue.id || "issue";
-    setStatus(`Created ${reference}${content.snapshotFallback ? " in link mode because the snapshot could not be extracted." : "."}`, "success");
+    setStatus(t("created", { reference, fallback: content.snapshotFallback ? t("snapshotFallback") : "." }), "success");
     const issueUrl = issue.url || (issue.id ? `${normalizedServerUrl(settings.serverUrl)}/issues/${issue.id}` : "");
     if (issueUrl) {
       const link = document.createElement("a");
       link.href = issueUrl;
       link.target = "_blank";
       link.rel = "noreferrer";
-      link.textContent = "Open created issue";
+      link.textContent = t("openCreatedIssue");
       byId("result").append(link);
     }
   } finally {
@@ -161,4 +161,10 @@ async function createIssue() {
 byId("settings-button").addEventListener("click", () => chrome.runtime.openOptionsPage());
 byId("capture-button").addEventListener("click", () => createIssue().catch((error) => setStatus(error.message, "error")));
 
-readCurrentPage().catch((error) => setStatus(error.message, "error"));
+async function initializePopup() {
+  const stored = await chrome.storage.local.get(SETTINGS_KEY);
+  applyLanguage(stored[SETTINGS_KEY]?.language || "en");
+  await readCurrentPage();
+}
+
+initializePopup().catch((error) => setStatus(error.message, "error"));

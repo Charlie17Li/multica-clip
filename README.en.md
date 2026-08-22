@@ -48,6 +48,8 @@ The server should create an issue in `project_id`, persist `source` where custom
 
 M1 uses a user-provided personal access token and domain-specific project/agent pairs. After the user grants the configured server permission, Settings loads `GET /api/workspaces`, `GET /api/projects?workspace_id=…`, and `GET /api/agents?workspace_id=…`, so users select readable names instead of entering UUIDs. The settings page accepts exact domains (`example.com`), subdomain wildcards (`*.example.com`), and a default (`*`). Capture selects an exact domain first, then the most specific matching wildcard, then the default. Tokens are never placed in an issue or page request and are stored only using `chrome.storage.local`.
 
+Choose English or Chinese from the Language setting. The preference applies to both Settings and the capture popup.
+
 ## Scope
 
 The popup preserves the note and opt-in choices after an API failure, so the user can correct settings/network access and submit again. A successful response exposes an issue link when the API returns an issue URL or ID.

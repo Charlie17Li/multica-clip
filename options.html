@@ -6,54 +6,58 @@
     <title>Multica Knowledge Capture settings</title>
     <link rel="stylesheet" href="options.css">
   </head>
-  <body>
+  <body data-title-key="settingsTitle">
     <main>
-      <h1>Multica Knowledge Capture settings</h1>
-      <p class="intro">Configure the Multica connection, then choose a project and agent for each site you capture from.</p>
+      <h1 data-i18n="settingsTitle">Multica Knowledge Capture settings</h1>
+      <p class="intro" data-i18n="settingsIntro">Configure the Multica connection, then choose a project and agent for each site you capture from.</p>
       <form id="settings-form">
-        <label for="server-url">Multica server URL</label>
+        <label for="language" data-i18n="language">Language</label>
+        <select id="language"><option value="en" data-i18n="english">English</option><option value="zh-CN" data-i18n="chinese">中文</option></select>
+
+        <label for="server-url" data-i18n="serverUrl">Multica server URL</label>
         <input id="server-url" type="url" placeholder="https://multica.example.com" autocomplete="url" required>
 
-        <label for="access-token">Access token</label>
-        <input id="access-token" type="password" placeholder="Paste a personal access token" autocomplete="off" required>
-        <p class="hint">Stored only in this browser's extension storage and sent only to the configured Multica server.</p>
+        <label for="access-token" data-i18n="accessToken">Access token</label>
+        <input id="access-token" type="password" placeholder="Paste a personal access token" data-i18n-placeholder="tokenPlaceholder" autocomplete="off" required>
+        <p class="hint" data-i18n="tokenHint">Stored only in this browser's extension storage and sent only to the configured Multica server.</p>
 
-        <label for="workspace-id">Workspace</label>
+        <label for="workspace-id" data-i18n="workspace">Workspace</label>
         <select id="workspace-id" required disabled>
-          <option value="">Load destinations first</option>
+          <option value="" data-i18n="loadFirst">Load destinations first</option>
         </select>
-        <button id="load-destinations" type="button">Load workspaces, projects, and agents</button>
+        <button id="load-destinations" type="button" data-i18n="loadDestinations">Load workspaces, projects, and agents</button>
 
         <section class="destinations" aria-labelledby="destinations-heading">
-          <h2 id="destinations-heading">Capture destinations</h2>
-          <p class="hint">Use an exact domain such as <code>example.com</code>, <code>*.example.com</code> for subdomains, or <code>*</code> as the default.</p>
+          <h2 id="destinations-heading" data-i18n="captureDestinations">Capture destinations</h2>
+          <p class="hint" data-i18n="destinationHint">Use an exact domain such as <code>example.com</code>, <code>*.example.com</code> for subdomains, or <code>*</code> as the default.</p>
           <div id="destination-list"></div>
-          <button id="add-destination" type="button">Add domain destination</button>
+          <button id="add-destination" type="button" data-i18n="addDestination">Add domain destination</button>
         </section>
 
-        <button type="submit">Save settings</button>
+        <button type="submit" data-i18n="saveSettings">Save settings</button>
         <p id="status" role="status" aria-live="polite"></p>
       </form>
     </main>
     <template id="destination-template">
       <fieldset class="destination">
-        <legend>Domain destination</legend>
-        <label>Domain
-          <input class="destination-domain" type="text" placeholder="example.com or *" autocomplete="off" required>
+        <legend data-i18n="domainDestination">Domain destination</legend>
+        <label><span data-i18n="domain">Domain</span>
+          <input class="destination-domain" type="text" placeholder="example.com or *" data-i18n-placeholder="domainPlaceholder" autocomplete="off" required>
         </label>
-        <label>Project
+        <label><span data-i18n="project">Project</span>
           <select class="destination-project-id" required disabled>
-            <option value="">Load destinations first</option>
+            <option value="" data-i18n="loadFirst">Load destinations first</option>
           </select>
         </label>
-        <label>Agent
+        <label><span data-i18n="agent">Agent</span>
           <select class="destination-agent-id" required disabled>
-            <option value="">Load destinations first</option>
+            <option value="" data-i18n="loadFirst">Load destinations first</option>
           </select>
         </label>
-        <button class="remove-destination" type="button">Remove</button>
+        <button class="remove-destination" type="button" data-i18n="remove">Remove</button>
       </fieldset>
     </template>
+    <script src="i18n.js"></script>
     <script src="options.js"></script>
   </body>
 </html>
