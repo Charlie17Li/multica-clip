@@ -18,6 +18,7 @@ dd { margin: 0 0 5px; overflow-wrap: anywhere; }
 #page-url { max-height: 38px; overflow: hidden; }
 .privacy { line-height: 1.4; }
 #capture-button { margin-top: 4px; width: 100%; }
+button.secondary { margin-top: 8px; width: 100%; }
 #status { font-size: 13px; min-height: 1.3em; }
 #status.error { color: #b42318; }
 #status.success { color: #027a48; }
