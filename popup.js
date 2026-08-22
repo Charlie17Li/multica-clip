@@ -21,7 +21,7 @@ function fencedSection(heading, value) {
   return value ? ["", `## ${heading}`, "", value.trim()].join("\n") : "";
 }
 
-function issueDescription(source, note, selection, snapshot) {
+function issueDescription(source, note, snapshot) {
   const fields = [
     "## Knowledge capture source",
     "",
@@ -32,13 +32,13 @@ function issueDescription(source, note, selection, snapshot) {
     `- **Capture mode:** ${snapshot ? "snapshot" : "link"}`,
     `- **Body snapshot:** ${snapshot ? "collected with explicit user confirmation" : "not collected"}`
   ];
-  return [fields.join("\n"), fencedSection("User note", note), fencedSection("Selected text", selection), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
+  return [fields.join("\n"), fencedSection("User note", note), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
 }
 
-function issuePayload(source, note, projectId, agentId, selection, snapshot) {
+function issuePayload(source, note, projectId, agentId, snapshot) {
   return {
     title: `Knowledge capture: ${source.title || source.site}`,
-    description: issueDescription(source, note, selection, snapshot),
+    description: issueDescription(source, note, snapshot),
     project_id: projectId,
     assignee_id: agentId,
     // The structured source object is deliberately duplicated in the request.
@@ -50,7 +50,6 @@ function issuePayload(source, note, projectId, agentId, selection, snapshot) {
       site: source.site,
       captured_at: source.capturedAt,
       capture_mode: snapshot ? "snapshot" : "link",
-      selected_text: selection || null,
       body_snapshot: snapshot || null
     }
   };
@@ -70,24 +69,21 @@ function destinationForHostname(settings, hostname) {
   return wildcard || destinations.find(({ domain }) => domain === "*");
 }
 
-async function readOptionalPageContent(includeSelection, includeSnapshot) {
-  if (!includeSelection && !includeSnapshot) return { selection: "", snapshot: "", snapshotFallback: false };
+async function readOptionalPageContent(includeSnapshot) {
+  if (!includeSnapshot) return { snapshot: "", snapshotFallback: false };
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: (wantSelection, wantSnapshot) => {
-      const selection = wantSelection ? window.getSelection()?.toString().trim() || "" : "";
-      if (!wantSnapshot) return { selection, snapshot: "" };
+    func: () => {
       const root = document.querySelector("article, main") || document.body;
       const copy = root.cloneNode(true);
       copy.querySelectorAll("script, style, noscript, nav, header, footer, aside, form").forEach((node) => node.remove());
       const snapshot = copy.innerText.replace(/\n{3,}/g, "\n\n").trim().slice(0, 100000);
-      return { selection, snapshot };
-    },
-    args: [includeSelection, includeSnapshot]
+      return { snapshot };
+    }
   });
-  if (includeSnapshot && !result.snapshot) return { selection: result.selection, snapshot: "", snapshotFallback: true };
-  return { selection: result.selection, snapshot: result.snapshot, snapshotFallback: false };
+  if (!result.snapshot) return { snapshot: "", snapshotFallback: true };
+  return { snapshot: result.snapshot, snapshotFallback: false };
 }
 
 async function readCurrentPage() {
@@ -121,14 +117,13 @@ async function createIssue() {
   byId("result").replaceChildren();
   setStatus(t("preparing"));
   try {
-    const includeSelection = byId("include-selection").checked;
     const includeSnapshot = byId("include-snapshot").checked;
     let content;
     try {
-      content = await readOptionalPageContent(includeSelection, includeSnapshot);
+      content = await readOptionalPageContent(includeSnapshot);
     } catch (error) {
       if (!includeSnapshot) throw error;
-      content = { selection: "", snapshot: "", snapshotFallback: true };
+      content = { snapshot: "", snapshotFallback: true };
     }
     setStatus(t("creating"));
     const response = await fetch(`${normalizedServerUrl(settings.serverUrl)}/api/issues`, {
@@ -137,7 +132,7 @@ async function createIssue() {
         "Authorization": `Bearer ${settings.accessToken}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(issuePayload(page, byId("note").value, destination.projectId, destination.agentId, content.selection, content.snapshot))
+      body: JSON.stringify(issuePayload(page, byId("note").value, destination.projectId, destination.agentId, content.snapshot))
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.message || result.error || `Multica returned ${response.status}.`);
