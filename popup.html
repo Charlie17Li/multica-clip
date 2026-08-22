@@ -22,6 +22,19 @@
         </dl>
       </section>
 
+      <fieldset id="destination-picker">
+        <legend data-i18n="captureDestination">Capture destination</legend>
+        <p class="hint" data-i18n="destinationPickerHint">The site-matched destination is selected by default. Changes here apply only to this capture.</p>
+        <label for="project-id"><span data-i18n="project">Project</span></label>
+        <select id="project-id" disabled>
+          <option value="" data-i18n="loading">Loading…</option>
+        </select>
+        <label for="agent-id"><span data-i18n="agent">Agent</span></label>
+        <select id="agent-id" disabled>
+          <option value="" data-i18n="loading">Loading…</option>
+        </select>
+      </fieldset>
+
       <label for="note"><span data-i18n="note">Note</span> <span data-i18n="optional">(optional)</span></label>
       <textarea id="note" rows="4" placeholder="Why is this worth keeping?" data-i18n-placeholder="notePlaceholder"></textarea>
       <fieldset>

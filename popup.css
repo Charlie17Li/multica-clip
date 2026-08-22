@@ -7,7 +7,7 @@ h2 { font-size: 14px; margin: 14px 0 6px; }
 button { cursor: pointer; padding: 8px 10px; }
 label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; }
 label span, .hint, .privacy { color: #667085; font-size: 12px; font-weight: 400; }
-input, textarea { box-sizing: border-box; font: inherit; padding: 8px; width: 100%; }
+input, textarea, select { box-sizing: border-box; font: inherit; padding: 8px; width: 100%; }
 fieldset { border: 1px solid #d0d5dd; margin: 14px 0 8px; padding: 8px 10px; }
 legend { font-size: 13px; font-weight: 600; padding: 0 4px; }
 label.choice { align-items: flex-start; display: flex; font-weight: 400; gap: 8px; line-height: 1.35; }
