@@ -26,7 +26,7 @@
 
 ## Multica API 契约
 
-扩展向 `POST {serverUrl}/api/issues` 发起 JSON 请求，并携带 `Authorization: Bearer {token}` 请求头：
+扩展向 `POST {serverUrl}/api/issues?workspace_id={workspaceId}` 发起 JSON 请求，并携带 `Authorization: Bearer {token}` 请求头：
 
 ```json
 {
@@ -38,7 +38,7 @@
 }
 ```
 
-服务端应在 `project_id` 对应项目中创建并分配给该 Agent；`assignee_type` 与 `assignee_id` 必须同时提供。接口返回 issue 对象（或 `{ "issue": issue }`），其中至少包含 `id` 或 `identifier`。来源信息写入 `description`，确保采集记录可追溯。
+`workspace_id` 用于限定当前工作区。服务端应在 `project_id` 对应项目中创建并分配给该 Agent；`assignee_type` 与 `assignee_id` 必须同时提供。接口返回 issue 对象（或 `{ "issue": issue }`），其中至少包含 `id` 或 `identifier`。来源信息写入 `description`，确保采集记录可追溯。
 
 ### 授权与项目选择
 

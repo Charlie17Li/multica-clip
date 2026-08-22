@@ -22,7 +22,7 @@ The server origin is an *optional* permission requested only after the user save
 
 ## Multica API contract
 
-The extension sends `POST {serverUrl}/api/issues` with an `Authorization: Bearer {token}` header and JSON content:
+The extension sends `POST {serverUrl}/api/issues?workspace_id={workspaceId}` with an `Authorization: Bearer {token}` header and JSON content:
 
 ```json
 {
@@ -34,7 +34,7 @@ The extension sends `POST {serverUrl}/api/issues` with an `Authorization: Bearer
 }
 ```
 
-The server creates an issue in `project_id` and assigns it to the Agent; `assignee_type` and `assignee_id` must be supplied together. It returns an issue object (or `{ "issue": issue }`) containing at least `id` or `identifier`. The source remains traceable through `description`.
+`workspace_id` scopes the request to the selected workspace. The server creates an issue in `project_id` and assigns it to the Agent; `assignee_type` and `assignee_id` must be supplied together. It returns an issue object (or `{ "issue": issue }`) containing at least `id` or `identifier`. The source remains traceable through `description`.
 
 ### Authorization and project selection
 

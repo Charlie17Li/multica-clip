@@ -156,7 +156,7 @@ async function createIssue() {
   if (!page) return;
   const projectId = byId("project-id").value;
   const agentId = byId("agent-id").value;
-  if (!settings.serverUrl || !settings.accessToken || !projectId || !agentId) {
+  if (!settings.serverUrl || !settings.accessToken || !settings.workspaceId || !projectId || !agentId) {
     throw new Error(t("configureFirst", { site: page.site }));
   }
   const serverOrigin = new URL(normalizedServerUrl(settings.serverUrl)).origin;
@@ -177,7 +177,8 @@ async function createIssue() {
     }
     setStatus(t("creating"));
     const payload = issuePayload(page, byId("note").value, projectId, agentId, content.snapshot);
-    const response = await fetch(`${normalizedServerUrl(settings.serverUrl)}/api/issues`, {
+    const createIssueUrl = `${normalizedServerUrl(settings.serverUrl)}/api/issues?workspace_id=${encodeURIComponent(settings.workspaceId)}`;
+    const response = await fetch(createIssueUrl, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${settings.accessToken}`,
