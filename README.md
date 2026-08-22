@@ -9,16 +9,16 @@ A Chrome/Edge Manifest V3 extension for creating a traceable Multica knowledge-c
 1. Open `chrome://extensions` (or `edge://extensions`) and enable Developer mode.
 2. Choose **Load unpacked** and select this directory.
 3. Open the extension, enter the Multica server URL, personal access token, and destination project UUID, then save.
-4. On an `http`/`https` article page, open the extension and select **Create link-mode issue**.
+4. On an `http`/`https` article page, open the extension and select **Create capture issue**.
 
 ## Privacy and permissions
 
 The manifest requests only:
 
-- `activeTab`, to read the URL and title of the page the user explicitly opens the extension on;
+- `activeTab` and `scripting`, to read the URL/title and, only after an explicit checkbox confirmation, optional selected text or a page-text snapshot from the page the user explicitly opens the extension on;
 - `storage`, to retain the user's server URL, token, and selected project locally in the browser profile.
 
-The server origin is an *optional* permission requested only after the user saves that specific server URL; it is required for the issue-creation request. There are no install-time host permissions, content scripts, or page-body extraction. Link mode submits only URL, title, site hostname, capture timestamp, and the optional note entered in the popup.
+The server origin is an *optional* permission requested only after the user saves that specific server URL; it is required for the issue-creation request. There are no install-time host permissions or persistent content scripts. By default, link mode submits only URL, title, site hostname, capture timestamp, and the optional note entered in the popup. Selected text and a page-text snapshot are separate opt-ins; snapshot extraction starts only after the user checks its explicit confirmation. If extraction fails or produces no text, the issue is created in link mode and the popup reports the fallback.
 
 ## Multica API contract
 
@@ -35,6 +35,7 @@ The extension sends `POST {serverUrl}/api/issues` with an `Authorization: Bearer
     "site": "example.com",
     "captured_at": "2026-08-22T00:00:00.000Z",
     "capture_mode": "link",
+    "selected_text": null,
     "body_snapshot": null
   }
 }
@@ -48,4 +49,4 @@ M1 uses a user-provided personal access token and project UUID. A future server-
 
 ## Scope
 
-This M1 release implements link mode only. Selection capture, full-page snapshots, retries, and an issue link are intentionally deferred to later milestones; any body snapshot must remain opt-in.
+The popup preserves the note and opt-in choices after an API failure, so the user can correct settings/network access and submit again. A successful response exposes an issue link when the API returns an issue URL or ID.
