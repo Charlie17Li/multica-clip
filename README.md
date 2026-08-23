@@ -26,7 +26,7 @@
 
 ## Multica API 契约
 
-扩展向 `POST {serverUrl}/api/issues?workspace_id={workspaceId}` 发起 JSON 请求，并携带 `Authorization: Bearer {token}` 请求头：
+扩展向 `POST {serverUrl}/api/issues?workspace_id={workspaceId}&allow_duplicate=true` 发起 JSON 请求，并携带 `Authorization: Bearer {token}` 请求头。知识采集允许用户再次提交相同来源（例如补充备注或正文快照），因此会显式允许创建重复 issue：
 
 ```json
 {

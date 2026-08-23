@@ -177,7 +177,10 @@ async function createIssue() {
     }
     setStatus(t("creating"));
     const payload = issuePayload(page, byId("note").value, projectId, agentId, content.snapshot);
-    const createIssueUrl = `${normalizedServerUrl(settings.serverUrl)}/api/issues?workspace_id=${encodeURIComponent(settings.workspaceId)}`;
+    // A user may intentionally capture the same source again, for example with
+    // a new note or an explicitly-confirmed snapshot. Knowledge captures are
+    // therefore allowed to bypass the server's active-duplicate guard.
+    const createIssueUrl = `${normalizedServerUrl(settings.serverUrl)}/api/issues?workspace_id=${encodeURIComponent(settings.workspaceId)}&allow_duplicate=true`;
     const response = await fetch(createIssueUrl, {
       method: "POST",
       headers: {

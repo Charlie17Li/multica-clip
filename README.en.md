@@ -22,7 +22,7 @@ The server origin is an *optional* permission requested only after the user save
 
 ## Multica API contract
 
-The extension sends `POST {serverUrl}/api/issues?workspace_id={workspaceId}` with an `Authorization: Bearer {token}` header and JSON content:
+The extension sends `POST {serverUrl}/api/issues?workspace_id={workspaceId}&allow_duplicate=true` with an `Authorization: Bearer {token}` header and JSON content. A user can intentionally capture the same source again (for example, with a new note or body snapshot), so knowledge captures explicitly allow duplicate issues:
 
 ```json
 {
