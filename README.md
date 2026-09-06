@@ -24,6 +24,23 @@
 
 默认链接模式只提交 URL、标题、站点主机名、采集时间，以及用户在弹窗内主动输入的备注；不会上传正文、Cookie 或截图。正文快照只有在用户勾选“确认提取并上传”后才会读取。若提取失败或没有文本，扩展会自动降级为链接模式并明确提示。
 
+## 站点 adapter
+
+正文快照使用可插拔的站点 adapter：先选择已注册且匹配当前 URL 的专用 adapter，未匹配、失败或返回空正文时安全回退到内置的 `generic-page-text` adapter。后者保持原有行为：从 `article`、`main` 或 `body` 读取文本，并移除常见的导航和表单元素。任何回退都不会阻止 issue 创建；扩展会在弹窗提示，并在 issue 描述中记录 adapter 标识、版本和非敏感提取警告。
+
+新增 adapter 时，在 `site-adapters.js` 加载后调用：
+
+```js
+MulticaSiteAdapters.register({
+  id: "example-article",
+  version: "1",
+  matches: (url) => new URL(url).hostname === "example.com",
+  extract: (document) => ({ snapshot: "Readable page text", warnings: [] })
+});
+```
+
+`extract` 必须返回 `snapshot`，可选返回 `canonicalUrl` 与 `warnings`。不要读取或返回 Cookie、令牌、登录态或私密资料；适配器应只提取用户已明确确认上传的页面文字。为 adapter 添加离线测试，覆盖正常选择、空结果和异常回退，不依赖线上页面。
+
 ## Multica API 契约
 
 扩展向 `POST {serverUrl}/api/issues?workspace_id={workspaceId}&allow_duplicate=true` 发起 JSON 请求，并携带 `Authorization: Bearer {token}` 请求头。知识采集允许用户再次提交相同来源（例如补充备注或正文快照），因此会显式允许创建重复 issue：
