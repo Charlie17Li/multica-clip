@@ -48,24 +48,27 @@ function fencedSection(heading, value) {
   return value ? ["", `## ${heading}`, "", value.trim()].join("\n") : "";
 }
 
-function issueDescription(source, note, snapshot) {
+function issueDescription(source, note, extraction) {
+  const snapshot = extraction.snapshot;
   const fields = [
     "## Knowledge capture source",
     "",
     `- **URL:** ${source.url}`,
+    extraction.canonicalUrl ? `- **Canonical URL:** ${escapeMarkdown(extraction.canonicalUrl)}` : "",
     `- **Title:** ${escapeMarkdown(source.title)}`,
     `- **Site:** ${escapeMarkdown(source.site)}`,
     `- **Captured at:** ${source.capturedAt}`,
     `- **Capture mode:** ${snapshot ? "snapshot" : "link"}`,
-    `- **Body snapshot:** ${snapshot ? "collected with explicit user confirmation" : "not collected"}`
+    `- **Body snapshot:** ${snapshot ? "collected with explicit user confirmation" : "not collected"}`,
+    `- **Adapter:** ${escapeMarkdown(extraction.adapterId || "not-run")} v${escapeMarkdown(extraction.adapterVersion || "n/a")}`
   ];
-  return [fields.join("\n"), fencedSection("User note", note), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
+  return [fields.filter(Boolean).join("\n"), fencedSection("Extraction warnings", (extraction.warnings || []).map((warning) => `- ${escapeMarkdown(warning)}`).join("\n")), fencedSection("User note", note), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
 }
 
-function issuePayload(source, note, projectId, agentId, snapshot) {
+function issuePayload(source, note, projectId, agentId, extraction) {
   return {
     title: `Knowledge capture: ${source.title || source.site}`,
-    description: issueDescription(source, note, snapshot),
+    description: issueDescription(source, note, extraction),
     project_id: projectId,
     // Multica validates assignees as a type/id pair. Destinations in this
     // extension are agents, so sending only assignee_id is rejected with 400.
@@ -89,20 +92,16 @@ function destinationForHostname(settings, hostname) {
 }
 
 async function readOptionalPageContent(includeSnapshot) {
-  if (!includeSnapshot) return { snapshot: "", snapshotFallback: false };
+  if (!includeSnapshot) return { snapshot: "", snapshotFallback: false, adapterId: "not-run", adapterVersion: "n/a", warnings: [] };
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["site-adapters.js"] });
   const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: () => {
-      const root = document.querySelector("article, main") || document.body;
-      const copy = root.cloneNode(true);
-      copy.querySelectorAll("script, style, noscript, nav, header, footer, aside, form").forEach((node) => node.remove());
-      const snapshot = copy.innerText.replace(/\n{3,}/g, "\n\n").trim().slice(0, 100000);
-      return { snapshot };
-    }
+    func: (url) => globalThis.MulticaSiteAdapters.extract(url, document),
+    args: [tab.url]
   });
-  if (!result.snapshot) return { snapshot: "", snapshotFallback: true };
-  return { snapshot: result.snapshot, snapshotFallback: false };
+  if (!result?.snapshot) return { ...(result || {}), snapshot: "", snapshotFallback: true };
+  return { ...result, snapshotFallback: false };
 }
 
 async function readCurrentPage() {
@@ -173,10 +172,10 @@ async function createIssue() {
       content = await readOptionalPageContent(includeSnapshot);
     } catch (error) {
       if (!includeSnapshot) throw error;
-      content = { snapshot: "", snapshotFallback: true };
+      content = { snapshot: "", snapshotFallback: true, adapterId: "unavailable", adapterVersion: "n/a", warnings: ["Snapshot extraction could not run; created a link capture."] };
     }
     setStatus(t("creating"));
-    const payload = issuePayload(page, byId("note").value, projectId, agentId, content.snapshot);
+    const payload = issuePayload(page, byId("note").value, projectId, agentId, content);
     // A user may intentionally capture the same source again, for example with
     // a new note or an explicitly-confirmed snapshot. Knowledge captures are
     // therefore allowed to bypass the server's active-duplicate guard.
@@ -203,7 +202,11 @@ async function createIssue() {
     }
     const issue = result.issue || result;
     const reference = issue.identifier || issue.id || "issue";
-    setStatus(t("created", { reference, fallback: content.snapshotFallback ? t("snapshotFallback") : "." }), "success");
+    setStatus(t("created", {
+      reference,
+      fallback: content.snapshotFallback ? t("snapshotFallback") : ".",
+      warning: content.warnings?.length ? t("adapterFallback") : ""
+    }), "success");
     const issueUrl = issue.url || (issue.id ? `${normalizedServerUrl(settings.serverUrl)}/issues/${issue.id}` : "");
     if (issueUrl) {
       const link = document.createElement("a");

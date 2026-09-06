@@ -20,6 +20,23 @@ The manifest requests only:
 
 The server origin is an *optional* permission requested only after the user saves that specific server URL; it is required for the issue-creation request. There are no install-time host permissions or persistent content scripts. By default, link mode submits only URL, title, site hostname, capture timestamp, and the optional note entered in the popup. Snapshot extraction starts only after the user checks its explicit confirmation. If extraction fails or produces no text, the issue is created in link mode and the popup reports the fallback.
 
+## Site adapters
+
+Snapshots use pluggable site adapters. The extension selects a registered URL-specific adapter first; an unmatched, failing, or empty adapter safely falls back to the built-in `generic-page-text` adapter. That adapter preserves the existing behavior: it reads text from `article`, `main`, or `body` after removing common navigation and form elements. A fallback never prevents issue creation: the popup explains it and the issue description records the adapter id, version, and non-sensitive extraction warnings.
+
+After `site-adapters.js` is loaded, register an adapter like this:
+
+```js
+MulticaSiteAdapters.register({
+  id: "example-article",
+  version: "1",
+  matches: (url) => new URL(url).hostname === "example.com",
+  extract: (document) => ({ snapshot: "Readable page text", warnings: [] })
+});
+```
+
+`extract` must return `snapshot`; it may also return `canonicalUrl` and `warnings`. Do not read or return cookies, tokens, login state, or private data. An adapter should only extract page text that the user has explicitly agreed to upload. Add offline tests for normal selection, empty output, and error fallback; do not depend on live pages.
+
 ## Multica API contract
 
 The extension sends `POST {serverUrl}/api/issues?workspace_id={workspaceId}&allow_duplicate=true` with an `Authorization: Bearer {token}` header and JSON content. A user can intentionally capture the same source again (for example, with a new note or body snapshot), so knowledge captures explicitly allow duplicate issues:
