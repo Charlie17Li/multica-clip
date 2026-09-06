@@ -48,6 +48,15 @@ function fencedSection(heading, value) {
   return value ? ["", `## ${heading}`, "", value.trim()].join("\n") : "";
 }
 
+function extractionMetadata(metadata) {
+  if (!metadata || typeof metadata !== "object") return "";
+  const labels = { author: "Author", node: "Node", tags: "Tags", publishedAt: "Published at", replyCount: "Replies available" };
+  return Object.entries(labels).flatMap(([key, label]) => {
+    const value = Array.isArray(metadata[key]) ? metadata[key].join(", ") : metadata[key];
+    return value === "" || value === undefined || value === null ? [] : [`- **${label}:** ${escapeMarkdown(value)}`];
+  }).join("\n");
+}
+
 function issueDescription(source, note, extraction) {
   const snapshot = extraction.snapshot;
   const fields = [
@@ -62,7 +71,7 @@ function issueDescription(source, note, extraction) {
     `- **Body snapshot:** ${snapshot ? "collected with explicit user confirmation" : "not collected"}`,
     `- **Adapter:** ${escapeMarkdown(extraction.adapterId || "not-run")} v${escapeMarkdown(extraction.adapterVersion || "n/a")}`
   ];
-  return [fields.filter(Boolean).join("\n"), fencedSection("Extraction warnings", (extraction.warnings || []).map((warning) => `- ${escapeMarkdown(warning)}`).join("\n")), fencedSection("User note", note), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
+  return [fields.filter(Boolean).join("\n"), fencedSection("Extracted page fields", extractionMetadata(extraction.metadata)), fencedSection("Extraction warnings", (extraction.warnings || []).map((warning) => `- ${escapeMarkdown(warning)}`).join("\n")), fencedSection("User note", note), fencedSection("Page-text snapshot", snapshot)].filter(Boolean).join("\n");
 }
 
 function issuePayload(source, note, projectId, agentId, extraction) {
