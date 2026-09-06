@@ -39,7 +39,9 @@ MulticaSiteAdapters.register({
 });
 ```
 
-`extract` 必须返回 `snapshot`，可选返回 `canonicalUrl` 与 `warnings`。不要读取或返回 Cookie、令牌、登录态或私密资料；适配器应只提取用户已明确确认上传的页面文字。为 adapter 添加离线测试，覆盖正常选择、空结果和异常回退，不依赖线上页面。
+`extract` 必须返回 `snapshot`，可选返回 `canonicalUrl`、`metadata` 与 `warnings`。不要读取或返回 Cookie、令牌、登录态或私密资料；适配器应只提取用户已明确确认上传的页面文字。为 adapter 添加离线测试，覆盖正常选择、空结果和异常回退，不依赖线上页面。
+
+内置 `v2ex-topic` adapter 仅适配 `v2ex.com/t/<id>` 主题页。它在正文快照外标明作者、节点、标签、发布时间和可用回复数量；默认不采集回复正文。主题缺少必要正文或页面结构已变化时，会记录非敏感警告并改用通用提取器。
 
 ## Multica API 契约
 

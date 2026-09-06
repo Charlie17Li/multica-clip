@@ -35,7 +35,9 @@ MulticaSiteAdapters.register({
 });
 ```
 
-`extract` must return `snapshot`; it may also return `canonicalUrl` and `warnings`. Do not read or return cookies, tokens, login state, or private data. An adapter should only extract page text that the user has explicitly agreed to upload. Add offline tests for normal selection, empty output, and error fallback; do not depend on live pages.
+`extract` must return `snapshot`; it may also return `canonicalUrl`, `metadata`, and `warnings`. Do not read or return cookies, tokens, login state, or private data. An adapter should only extract page text that the user has explicitly agreed to upload. Add offline tests for normal selection, empty output, and error fallback; do not depend on live pages.
+
+The built-in `v2ex-topic` adapter only matches `v2ex.com/t/<id>` topic pages. It records the author, node, tags, publication time, and available-reply count alongside a confirmed body snapshot; it does not collect reply bodies by default. If the required topic text is missing or the page structure changes, it emits a non-sensitive warning and falls back to generic extraction.
 
 ## Multica API contract
 
