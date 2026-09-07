@@ -76,3 +76,5 @@ M1 使用用户提供的个人访问令牌，以及按域名配置的项目 / Ag
 ## 知识库归档
 
 后续 Agent 的来源字段、去重、PARA 归类、Git 可追溯性和 issue 回写格式见 [docs/archiving-agent.md](docs/archiving-agent.md)。
+
+V2EX 来源可使用仓库中的 [`v2ex-api-collection` skill](skills/v2ex-api-collection/SKILL.md)，通过 API 2.0 获取主题、节点和最新主题的结构化数据；回复内容仍需明确请求才会采集。

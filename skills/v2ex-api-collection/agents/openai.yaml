@@ -1,0 +1,4 @@
+interface:
+  display_name: "V2EX API Collection"
+  short_description: "Capture V2EX topics and nodes through API 2.0"
+  default_prompt: "Use $v2ex-api-collection to retrieve and archive this V2EX source accurately."
