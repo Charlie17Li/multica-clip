@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Multica Knowledge Capture",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create a traceable Multica knowledge-capture issue from the current page.",
   "permissions": ["activeTab", "storage", "scripting"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],

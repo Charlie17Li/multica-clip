@@ -204,7 +204,10 @@ async function createIssue() {
       await recordDiagnostic("issue_create_failed", {
         message,
         serverOrigin,
-        request: captureRequestSummary(payload, page.site, Boolean(content.snapshot)),
+        request: captureRequestSummary(payload, page.site, Boolean(content.snapshot), {
+          workspaceId: settings.workspaceId,
+          allowDuplicate: true
+        }),
         response: diagnosticResponse(response, responseText)
       });
       throw new Error(message);

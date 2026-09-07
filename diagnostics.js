@@ -36,9 +36,14 @@ function parseResponseJson(text) {
   }
 }
 
-function captureRequestSummary(payload, pageHost, snapshot) {
+function captureRequestSummary(payload, pageHost, snapshot, requestContext = {}) {
   return {
     endpoint: "/api/issues",
+    // Keep the workspace identifier itself out of diagnostics, but record the
+    // two request controls that distinguish configuration errors from an
+    // active-duplicate rejection.
+    workspaceProvided: Boolean(requestContext.workspaceId),
+    allowDuplicate: Boolean(requestContext.allowDuplicate),
     projectId: payload.project_id,
     assigneeType: payload.assignee_type,
     assigneeId: payload.assignee_id,
@@ -68,4 +73,8 @@ async function diagnosticReport() {
 
 async function copyDiagnosticReport() {
   await navigator.clipboard.writeText(await diagnosticReport());
+}
+
+if (typeof module !== "undefined") {
+  module.exports = { captureRequestSummary, diagnosticResponse, safeDiagnosticText, safeDiagnosticValue };
 }
