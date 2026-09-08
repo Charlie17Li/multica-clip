@@ -46,6 +46,8 @@
         <p class="hint" data-i18n="snapshotHint">A snapshot is read only after this confirmation. If it cannot be extracted, we create a link-mode issue instead.</p>
         <button id="select-region" class="secondary" type="button" disabled data-i18n="selectRegion">Select page region</button>
         <p class="hint" data-i18n="selectRegionHint">Choose an element on the page. This only saves a temporary location, not page text.</p>
+        <p id="region-state" class="hint" hidden></p>
+        <button id="clear-region" class="secondary" type="button" hidden data-i18n="useWholePage">Use whole-page snapshot</button>
       </fieldset>
       <p class="privacy" data-i18n="privacy">By default, only this page's URL, title, site, capture time, and your note are submitted.</p>
       <button id="capture-button" type="button" data-i18n="createIssue">Create capture issue</button>
