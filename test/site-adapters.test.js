@@ -25,6 +25,19 @@ test("uses an explicitly selected root for generic extraction", () => {
   assert.equal(result.snapshot, "Selected only");
 });
 
+test("sanitizes a selected generic region with the same exclusions as a whole page", () => {
+  const removed = [];
+  const selected = {
+    cloneNode: () => ({
+      innerText: "Selected article text",
+      querySelectorAll: (selector) => selector.split(", ").map((name) => ({ remove: () => removed.push(name) }))
+    })
+  };
+  const result = adapters.extract("https://example.test/post", documentWithText("Whole page"), selected);
+  assert.equal(result.snapshot, "Selected article text");
+  assert.deepEqual(removed, ["script", "style", "noscript", "nav", "header", "footer", "aside", "form"]);
+});
+
 test("chooses a registered exact-site adapter without changing callers", () => {
   adapters.register({ id: "docs-example", version: "7", matches: (url) => new URL(url).hostname === "docs.example.test", extract: () => ({ snapshot: "Adapter body", canonicalUrl: "https://docs.example.test/canonical", warnings: ["Date missing."] }) });
   const result = adapters.extract("https://docs.example.test/a", documentWithText("Generic body"));
@@ -97,6 +110,19 @@ test("does not widen a V2EX region selection into reply text", () => {
   assert.equal(result.snapshot, "");
   assert.equal(result.adapterId, "v2ex-topic");
   assert.match(result.warnings[0], /outside the V2EX topic body/);
+});
+
+test("keeps V2EX reply text excluded when a region inside the topic is selected", () => {
+  const fixture = fs.readFileSync(path.join(__dirname, "fixtures", "v2ex-region.html"), "utf8");
+  assert.match(fixture, /Reply text must stay excluded/);
+  const topicBody = { innerText: "Topic body only", contains: (node) => node === selected };
+  const selected = { innerText: "Topic body only" };
+  const document = v2exDocument({ body: "Topic body only" });
+  const originalQuery = document.querySelector.bind(document);
+  document.querySelector = (selector) => selector.includes("topic_content") ? topicBody : originalQuery(selector);
+  const result = adapters.extract("https://www.v2ex.com/t/4242", document, selected);
+  assert.equal(result.snapshot, "Topic body only");
+  assert.doesNotMatch(result.snapshot, /Reply text/);
 });
 
 test("keeps long code-like V2EX topic text intact", () => {

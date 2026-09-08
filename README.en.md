@@ -20,6 +20,12 @@ The manifest requests only:
 
 The server origin is an *optional* permission requested only after the user saves that specific server URL; it is required for the issue-creation request. There are no install-time host permissions or persistent content scripts. By default, link mode submits only URL, title, site hostname, capture timestamp, and the optional note entered in the popup. Snapshot extraction starts only after the user checks its explicit confirmation. If extraction fails or produces no text, the issue is created in link mode and the popup reports the fallback.
 
+### Page-region snapshots
+
+After checking **I confirm that I want to extract and upload a page-text snapshot**, choose **Select page region**. The popup closes and returns you to the page: hover an element, click or press Enter to confirm it, use `Alt` + `↑` to choose its parent, or press Esc to cancel. At this stage the extension stores only the URL and a temporary DOM locator in session storage; it does not read, retain, or upload page text. Reopen the popup and choose **Create capture issue** to resolve that locator, apply the existing adapter-cleaning rules, and extract plain text.
+
+A locator can become invalid after a page rerender. The extension then does not upload the wrong content and lets you reselect, use a whole-page snapshot, or create a link capture. Region selection is available only on normal `http(s)` pages; browser-protected pages, cross-site iframes, and closed Shadow DOM are unsupported boundaries.
+
 ## Site adapters
 
 Snapshots use pluggable site adapters. The extension selects a registered URL-specific adapter first; an unmatched, failing, or empty adapter safely falls back to the built-in `generic-page-text` adapter. That adapter preserves the existing behavior: it reads text from `article`, `main`, or `body` after removing common navigation and form elements. A fallback never prevents issue creation: the popup explains it and the issue description records the adapter id, version, and non-sensitive extraction warnings.
