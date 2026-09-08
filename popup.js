@@ -1,5 +1,7 @@
 const SETTINGS_KEY = "multicaCaptureSettings";
 const REGION_RESULT_KEY = "multicaPendingRegionDescriptor";
+const PANEL_DRAFT_KEY = "multicaSidePanelDraft";
+const isSidePanel = document.body.dataset.captureSurface === "side-panel";
 let page = null;
 let settings = {};
 
@@ -123,6 +125,24 @@ async function refreshRegionState() {
   byId("region-state").hidden = !descriptor;
   byId("region-state").textContent = descriptor ? t("regionSelected") : "";
   byId("clear-region").hidden = !descriptor;
+}
+
+async function startRegionPicker() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["region-picker.js"] });
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.MulticaRegionPicker.start() });
+}
+
+async function openSidePanelForRegion() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
+  await chrome.storage.session.set({ [PANEL_DRAFT_KEY]: {
+    url: tab.url, note: byId("note").value, projectId: byId("project-id").value,
+    agentId: byId("agent-id").value, includeSnapshot: byId("include-snapshot").checked
+  } });
+  const response = await chrome.runtime.sendMessage({ type: "open-capture-side-panel", tabId: tab.id });
+  if (!response?.ok) throw new Error("side_panel_unavailable");
 }
 
 async function readOptionalPageContent(includeSnapshot) {
@@ -260,6 +280,7 @@ async function createIssue() {
       byId("result").append(link);
     }
     await recordDiagnostic("issue_created", { serverOrigin });
+    await chrome.storage.session.remove(PANEL_DRAFT_KEY);
   } finally {
     button.disabled = false;
   }
@@ -278,13 +299,14 @@ byId("clear-region").addEventListener("click", async () => {
 byId("select-region").addEventListener("click", async () => {
   if (!byId("include-snapshot").checked) return;
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
-    // This is a user-initiated, activeTab-scoped injection. region-picker.js
-    // writes only URL + selector to session storage after a confirmed choice.
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["region-picker.js"] });
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.MulticaRegionPicker.start() });
+    if (isSidePanel) await startRegionPicker();
+    else await openSidePanelForRegion();
   } catch (error) {
+    if (!isSidePanel && error?.message === "side_panel_unavailable") {
+      setStatus(t("sidePanelUnavailable"), "error");
+      try { await startRegionPicker(); } catch (_) { await reportError("region_picker_failed", new Error(t("regionPickerUnavailable"))); }
+      return;
+    }
     await reportError("region_picker_failed", new Error(t("regionPickerUnavailable")));
   }
 });
@@ -295,7 +317,21 @@ async function initializePopup() {
   applyLanguage(settings.language || "en");
   await readCurrentPage();
   await loadDestinationPicker();
+  if (isSidePanel) {
+    const draft = (await chrome.storage.session.get(PANEL_DRAFT_KEY))[PANEL_DRAFT_KEY];
+    if (draft && sameDocumentUrl(draft.url, page.url)) {
+      byId("note").value = draft.note || "";
+      byId("project-id").value = draft.projectId || byId("project-id").value;
+      byId("agent-id").value = draft.agentId || byId("agent-id").value;
+      byId("include-snapshot").checked = Boolean(draft.includeSnapshot);
+      byId("select-region").disabled = !byId("include-snapshot").checked;
+    }
+  }
   await refreshRegionState();
 }
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (isSidePanel && message?.type === "region-selected") refreshRegionState();
+});
 
 initializePopup().catch((error) => reportError("popup_initialize_failed", error));

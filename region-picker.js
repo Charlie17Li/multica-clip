@@ -85,7 +85,10 @@
       hint.remove();
       delete root[SESSION_KEY];
       if (result.ok) {
-        try { await chrome.storage.session.set({ [RESULT_KEY]: result.descriptor }); } catch (_) { /* the caller still receives the non-sensitive descriptor */ }
+        try {
+          await chrome.storage.session.set({ [RESULT_KEY]: result.descriptor });
+          chrome.runtime?.sendMessage?.({ type: "region-selected" });
+        } catch (_) { /* the caller still receives the non-sensitive descriptor */ }
       }
       resolve(result);
     };

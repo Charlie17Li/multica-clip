@@ -3,11 +3,13 @@
   "name": "Multica Knowledge Capture",
   "version": "0.1.1",
   "description": "Create a traceable Multica knowledge-capture issue from the current page.",
-  "permissions": ["activeTab", "storage", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting", "sidePanel"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "action": {
     "default_title": "Capture to Multica",
     "default_popup": "popup.html"
   },
+  "background": { "service_worker": "service-worker.js" },
+  "side_panel": { "default_path": "side-panel.html" },
   "options_page": "options.html"
 }
