@@ -237,6 +237,22 @@ async function createIssue() {
 byId("settings-button").addEventListener("click", () => chrome.runtime.openOptionsPage());
 byId("copy-diagnostics").addEventListener("click", () => copyDiagnosticReport().then(() => setStatus(t("diagnosticsCopied"), "success")).catch((error) => reportError("diagnostics_copy_failed", error)));
 byId("capture-button").addEventListener("click", () => createIssue().catch((error) => reportError("capture_failed", error)));
+byId("include-snapshot").addEventListener("change", (event) => {
+  byId("select-region").disabled = !event.target.checked;
+});
+byId("select-region").addEventListener("click", async () => {
+  if (!byId("include-snapshot").checked) return;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
+    // This is a user-initiated, activeTab-scoped injection. region-picker.js
+    // writes only URL + selector to session storage after a confirmed choice.
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["region-picker.js"] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.MulticaRegionPicker.start() });
+  } catch (error) {
+    await reportError("region_picker_failed", new Error(t("regionPickerUnavailable")));
+  }
+});
 
 async function initializePopup() {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
