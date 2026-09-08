@@ -47,6 +47,8 @@ test("invalid selections remain temporary until removed, while valid snapshots c
 
 test("Side Panel renders ordered regions with individual removal controls", () => {
   assert.match(sidePanel, /id="region-list"/);
+  const popupPage = fs.readFileSync(path.join(__dirname, "..", "popup.html"), "utf8");
+  assert.match(popupPage, /id="region-list"/);
   assert.match(popup, /descriptors\.map\(\(descriptor, index\)/);
   assert.match(popup, /removeRegion/);
 });
