@@ -9,7 +9,7 @@ A Chrome/Edge Manifest V3 extension for creating a traceable Multica knowledge-c
 1. Open `chrome://extensions` (or `edge://extensions`) and enable Developer mode.
 2. Choose **Load unpacked** and select this directory.
 3. Open **Settings** from the extension, enter the Multica server URL and personal access token, then load and select the workspace, project, and agent for each domain destination. No UUID entry is required. Use `*` for a default destination.
-4. On an `http`/`https` article page, open the extension. Its site-matched project and agent are shown by default; select another project or agent for this one capture if needed, then select **Create capture issue**.
+4. On an `http`/`https` article page, open the extension. Its site-matched project and agent are shown by default; select another project or agent for this one capture if needed, then select **Create capture issue**. For page-region snapshots, the Side Panel is the primary workflow (described below).
 
 ## Privacy and permissions
 
@@ -22,9 +22,11 @@ The server origin is an *optional* permission requested only after the user save
 
 ### Page-region snapshots
 
-After checking **I confirm that I want to extract and upload a page-text snapshot**, choose **Select page region**. The popup closes and returns you to the page: hover an element, click or press Enter to confirm it, use `Alt` + `↑` to choose its parent, or press Esc to cancel. At this stage the extension stores only the URL and a temporary DOM locator in session storage; it does not read, retain, or upload page text. Reopen the popup and choose **Create capture issue** to resolve that locator, apply the existing adapter-cleaning rules, and extract plain text.
+After checking **I confirm that I want to extract and upload a page-text snapshot**, choose **Add page region**. The popup hands the confirmed draft to a tab-associated Side Panel, which remains open while you select on the page: hover an element, click or press Enter to confirm it, use `Alt` + `↑` to choose its parent, or press Esc to cancel. Repeat **Add page region** to build an ordered list; duplicate selections are ignored, and a parent selection replaces any earlier child selection. You can remove individual regions or choose **Use whole-page snapshot** to clear the list.
 
-A locator can become invalid after a page rerender. The extension then does not upload the wrong content and lets you reselect, use a whole-page snapshot, or create a link capture. Region selection is available only on normal `http(s)` pages; browser-protected pages, cross-site iframes, and closed Shadow DOM are unsupported boundaries.
+At selection time the extension stores only the URL and temporary DOM locators in session storage; it does not read, retain, or upload page text. Only **Create capture issue** resolves the ordered locators, applies adapter cleaning, and extracts plain text. If any locator is invalid after a rerender or navigation, creation is blocked: it never substitutes a whole-page snapshot. Remove or reselect the invalid region, explicitly clear the list for a whole-page snapshot, or turn off the confirmation for link mode.
+
+If Side Panel is unavailable (including unsupported browser environments), the popup reports this and falls back to the original in-page picker; reopen the popup after selecting. Region selection is available only on normal `http(s)` pages; browser-protected pages, cross-site iframes, and closed Shadow DOM are unsupported boundaries.
 
 ## Site adapters
 

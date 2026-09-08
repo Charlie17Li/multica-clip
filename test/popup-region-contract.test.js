@@ -28,6 +28,23 @@ test("popup keeps ordered region locators and reads them only while creating a c
   assert.doesNotMatch(descriptionBody, /selector/);
 });
 
+test("multi-region extraction removes nested roots, blocks invalid locators, and never substitutes a whole page", () => {
+  const extraction = popup.match(/func: \(url, selectors\) => \{[\s\S]*?\n    \},\n    args:/)?.[0] || "";
+  assert.match(extraction, /if \(invalidSelectors\.length\) return \{ invalidSelectors \};/);
+  assert.match(extraction, /selected === root \|\| selected\.contains\(root\)/);
+  assert.match(extraction, /if \(root\.contains\(selectedRoots\[index\]\)\) selectedRoots\.splice\(index, 1\);/);
+  assert.match(extraction, /results\.map\(\(entry\) => entry\.snapshot\)\.filter\(Boolean\)\.join\("\\n\\n"\)/);
+  assert.match(extraction, /const first = results\[0\] \|\| globalThis\.MulticaSiteAdapters\.extract\(url, document, null\);/);
+});
+
+test("invalid selections remain temporary until removed, while valid snapshots clear temporary locators", () => {
+  assert.match(popup, /if \(result\?\.invalidSelectors\?\.length\) return \{ \.\.\.result, snapshot: "", snapshotFallback: false \};/);
+  assert.match(popup, /if \(descriptors\.length\) await chrome\.storage\.session\.remove\(REGION_RESULT_KEY\);/);
+  assert.match(popup, /filter\(\(_, itemIndex\) => itemIndex !== index\)/);
+  assert.match(popup, /await chrome\.storage\.session\.remove\(REGION_RESULT_KEY\);\n  await refreshRegionState\(\);/);
+  assert.match(popup, /sameDocumentUrl\(descriptor\.url, tabUrl\)/);
+});
+
 test("Side Panel renders ordered regions with individual removal controls", () => {
   assert.match(sidePanel, /id="region-list"/);
   assert.match(popup, /descriptors\.map\(\(descriptor, index\)/);
