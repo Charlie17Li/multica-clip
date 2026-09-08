@@ -1,4 +1,5 @@
 const SETTINGS_KEY = "multicaCaptureSettings";
+const REGION_RESULT_KEY = "multicaPendingRegionDescriptor";
 let page = null;
 let settings = {};
 
@@ -100,15 +101,45 @@ function destinationForHostname(settings, hostname) {
   return wildcard || destinations.find(({ domain }) => domain === "*");
 }
 
+function sameDocumentUrl(left, right) {
+  try {
+    const a = new URL(left); const b = new URL(right);
+    a.hash = ""; b.hash = "";
+    return a.href === b.href;
+  } catch (_) { return false; }
+}
+
+async function pendingRegionDescriptor(tabUrl) {
+  const stored = await chrome.storage.session.get(REGION_RESULT_KEY);
+  const descriptor = stored[REGION_RESULT_KEY];
+  if (descriptor && typeof descriptor.selector === "string" && sameDocumentUrl(descriptor.url, tabUrl)) return descriptor;
+  if (descriptor) await chrome.storage.session.remove(REGION_RESULT_KEY);
+  return null;
+}
+
+async function refreshRegionState() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const descriptor = tab?.url ? await pendingRegionDescriptor(tab.url) : null;
+  byId("region-state").hidden = !descriptor;
+  byId("region-state").textContent = descriptor ? t("regionSelected") : "";
+  byId("clear-region").hidden = !descriptor;
+}
+
 async function readOptionalPageContent(includeSnapshot) {
   if (!includeSnapshot) return { snapshot: "", snapshotFallback: false, adapterId: "not-run", adapterVersion: "n/a", warnings: [] };
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["site-adapters.js"] });
+  const descriptor = await pendingRegionDescriptor(tab.url);
   const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: (url) => globalThis.MulticaSiteAdapters.extract(url, document),
-    args: [tab.url]
+    func: (url, selector) => {
+      const root = selector ? document.querySelector(selector) : null;
+      if (selector && (!root || !root.isConnected)) return { snapshot: "", snapshotFallback: true, adapterId: "unavailable", adapterVersion: "n/a", warnings: ["The selected page region is no longer available. Re-select it, use a whole-page snapshot, or create a link capture."] };
+      return globalThis.MulticaSiteAdapters.extract(url, document, root);
+    },
+    args: [tab.url, descriptor?.selector || ""]
   });
+  if (descriptor) await chrome.storage.session.remove(REGION_RESULT_KEY);
   if (!result?.snapshot) return { ...(result || {}), snapshot: "", snapshotFallback: true };
   return { ...result, snapshotFallback: false };
 }
@@ -240,6 +271,10 @@ byId("capture-button").addEventListener("click", () => createIssue().catch((erro
 byId("include-snapshot").addEventListener("change", (event) => {
   byId("select-region").disabled = !event.target.checked;
 });
+byId("clear-region").addEventListener("click", async () => {
+  await chrome.storage.session.remove(REGION_RESULT_KEY);
+  await refreshRegionState();
+});
 byId("select-region").addEventListener("click", async () => {
   if (!byId("include-snapshot").checked) return;
   try {
@@ -260,6 +295,7 @@ async function initializePopup() {
   applyLanguage(settings.language || "en");
   await readCurrentPage();
   await loadDestinationPicker();
+  await refreshRegionState();
 }
 
 initializePopup().catch((error) => reportError("popup_initialize_failed", error));

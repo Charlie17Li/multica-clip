@@ -16,6 +16,7 @@
       canonicalUrl: typeof result?.canonicalUrl === "string" ? result.canonicalUrl : "",
       metadata: result?.metadata && typeof result.metadata === "object" && !Array.isArray(result.metadata) ? result.metadata : {},
       warnings,
+      preventGenericFallback: Boolean(result?.preventGenericFallback),
       adapterId: adapter.id,
       adapterVersion: adapter.version
     };
@@ -25,8 +26,8 @@
     id: "generic-page-text",
     version: "1",
     matches: () => true,
-    extract(document) {
-      const pageRoot = document.querySelector("article, main") || document.body;
+    extract(document, root) {
+      const pageRoot = root || document.querySelector("article, main") || document.body;
       if (!pageRoot) return { snapshot: "", warnings: ["No readable page content was found."] };
       const copy = pageRoot.cloneNode(true);
       copy.querySelectorAll("script, style, noscript, nav, header, footer, aside, form").forEach((node) => node.remove());
@@ -51,17 +52,20 @@
     }) || genericAdapter;
   }
 
-  function extract(url, document) {
+  function extract(url, document, root) {
     const adapter = selectedAdapter(url);
     const fallback = (warning) => {
-      const result = normalizeResult(genericAdapter.extract(document), genericAdapter);
+      const result = normalizeResult(genericAdapter.extract(document, root), genericAdapter);
       if (warning) result.warnings.unshift(warning);
       return result;
     };
     if (adapter === genericAdapter) return fallback();
     try {
-      const result = normalizeResult(adapter.extract(document), adapter);
+      const result = normalizeResult(adapter.extract(document, root), adapter);
       if (result.snapshot) return result;
+      // A scoped adapter can deliberately reject a selected region (for
+      // example, a V2EX reply). Do not widen that request to generic page text.
+      if (result.preventGenericFallback) return result;
       return fallback(result.warnings[0] || `Adapter ${adapter.id} returned no readable text; used the generic extractor.`);
     } catch (_) {
       return fallback(`Adapter ${adapter.id} failed; used the generic extractor.`);
@@ -86,11 +90,17 @@
     id: "v2ex-topic",
     version: "1",
     matches: (url) => Boolean(v2exTopicId(url)),
-    extract(document) {
+    extract(document, root) {
       const title = nodeText(document.querySelector("#Main .header h1, .header h1"));
-      const body = nodeText(document.querySelector("#Main .topic_content, .topic_content"));
+      const topicContent = document.querySelector("#Main .topic_content, .topic_content");
+      const selectedInTopic = !root || root === topicContent || topicContent?.contains?.(root);
+      const body = selectedInTopic ? nodeText(root || topicContent) : "";
       if (!title || !body) {
-        return { snapshot: "", warnings: ["V2EX topic title or body was unavailable."] };
+        return {
+          snapshot: "",
+          warnings: [selectedInTopic ? "V2EX topic title or body was unavailable." : "The selected region is outside the V2EX topic body."],
+          preventGenericFallback: Boolean(root && !selectedInTopic)
+        };
       }
 
       const topicId = v2exTopicId(document.location?.href || "") || "";

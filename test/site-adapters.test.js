@@ -19,6 +19,12 @@ test("uses generic page-text extraction when no site adapter matches", () => {
   assert.deepEqual(result.warnings, []);
 });
 
+test("uses an explicitly selected root for generic extraction", () => {
+  const selected = { cloneNode: () => ({ innerText: "Selected only", querySelectorAll: () => [] }) };
+  const result = adapters.extract("https://example.test/post", documentWithText("Whole page"), selected);
+  assert.equal(result.snapshot, "Selected only");
+});
+
 test("chooses a registered exact-site adapter without changing callers", () => {
   adapters.register({ id: "docs-example", version: "7", matches: (url) => new URL(url).hostname === "docs.example.test", extract: () => ({ snapshot: "Adapter body", canonicalUrl: "https://docs.example.test/canonical", warnings: ["Date missing."] }) });
   const result = adapters.extract("https://docs.example.test/a", documentWithText("Generic body"));
@@ -80,6 +86,17 @@ test("extracts a V2EX topic fixture without reply bodies", () => {
   assert.equal(result.canonicalUrl, "https://www.v2ex.com/t/4242");
   assert.deepEqual(result.metadata, { title: "A fixture topic", author: "fixture-author", node: "share", tags: ["privacy", "testing"], publishedAt: "2026-01-02 03:04:05 +08:00", replyCount: 2, topicId: "4242" });
   assert.doesNotMatch(result.snapshot, /Reply content/);
+});
+
+test("does not widen a V2EX region selection into reply text", () => {
+  const topicBody = { innerText: "Topic body", contains: () => false };
+  const document = v2exDocument();
+  const originalQuery = document.querySelector.bind(document);
+  document.querySelector = (selector) => selector.includes("topic_content") ? topicBody : originalQuery(selector);
+  const result = adapters.extract("https://www.v2ex.com/t/4242", document, { innerText: "Reply text" });
+  assert.equal(result.snapshot, "");
+  assert.equal(result.adapterId, "v2ex-topic");
+  assert.match(result.warnings[0], /outside the V2EX topic body/);
 });
 
 test("keeps long code-like V2EX topic text intact", () => {
