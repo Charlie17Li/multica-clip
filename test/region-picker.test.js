@@ -92,6 +92,27 @@ test("does not duplicate a selector when the same element is selected twice", as
   assert.equal(writes[1].multicaPendingRegionDescriptor.length, 1);
 });
 
+test("keeps distinct page regions in the order the user confirms them", async () => {
+  const { context, document, target, writes } = pickerHarness();
+  const second = new FakeElement("section", "second");
+  document.body.append(second);
+  document.querySelectorAll = (selector) => selector === "#chosen" ? [target] : selector === "#second" ? [second] : [];
+
+  let pending = context.MulticaRegionPicker.start();
+  document.elementFromPoint = () => target;
+  document.dispatch("click", { clientX: 1, clientY: 1 });
+  await pending;
+  pending = context.MulticaRegionPicker.start();
+  document.elementFromPoint = () => second;
+  document.dispatch("click", { clientX: 1, clientY: 1 });
+  await pending;
+
+  assert.deepEqual(JSON.parse(JSON.stringify(writes[1].multicaPendingRegionDescriptor)), [
+    { url: "https://example.test/article", selector: "#chosen" },
+    { url: "https://example.test/article", selector: "#second" }
+  ]);
+});
+
 test("restarting a picker cancels the earlier session and leaves one clean session", async () => {
   const { context, document } = pickerHarness();
   const first = context.MulticaRegionPicker.start();
