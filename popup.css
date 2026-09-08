@@ -24,3 +24,8 @@ button.secondary { margin-top: 8px; width: 100%; }
 #status.success { color: #027a48; }
 #result { font-size: 13px; margin: 0; }
 #result a { color: #175cd3; }
+#region-list { font-size: 12px; margin: 8px 0; padding-left: 24px; }
+#region-list li { align-items: center; display: flex; gap: 8px; margin: 5px 0; }
+#region-list code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#region-list button { margin-left: auto; padding: 3px 6px; width: auto; }
+#region-list li.invalid code { color: #b42318; }

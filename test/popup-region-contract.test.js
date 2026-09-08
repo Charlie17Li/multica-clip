@@ -13,14 +13,25 @@ test("popup only enables region selection after explicit snapshot confirmation",
   assert.match(popup, /if \(!byId\("include-snapshot"\)\.checked\) return;/);
 });
 
-test("popup keeps a region as a temporary locator and reads it only while creating a confirmed snapshot", () => {
+test("popup keeps ordered region locators and reads them only while creating a confirmed snapshot", () => {
   assert.match(popup, /if \(!includeSnapshot\) return \{ snapshot: ""/);
   assert.match(popup, /const includeSnapshot = byId\("include-snapshot"\)\.checked;[\s\S]*readOptionalPageContent\(includeSnapshot\)/);
-  assert.match(popup, /args: \[tab\.url, descriptor\?\.selector \|\| ""\]/);
-  assert.match(popup, /if \(descriptor\) await chrome\.storage\.session\.remove\(REGION_RESULT_KEY\);/);
+  assert.match(popup, /Array\.isArray\(stored\[REGION_RESULT_KEY\]\)/);
+  assert.match(popup, /args: \[tab\.url, descriptors\.map\(\(descriptor\) => descriptor\.selector\)\]/);
+  assert.match(popup, /if \(descriptors\.length\) await chrome\.storage\.session\.remove\(REGION_RESULT_KEY\);/);
+  assert.match(popup, /invalidSelectors/);
+  assert.match(popup, /invalidRegionSelectors = new Set\(content\.invalidSelectors\)/);
+  assert.match(popup, /item\.className = invalidRegionSelectors\.has/);
+  assert.match(popup, /selected\.contains\(root\)/);
   assert.doesNotMatch(popup, /outerHTML/);
   const descriptionBody = popup.match(/function issueDescription[\s\S]*?\n}\n\nfunction issuePayload/)?.[0] || "";
   assert.doesNotMatch(descriptionBody, /selector/);
+});
+
+test("Side Panel renders ordered regions with individual removal controls", () => {
+  assert.match(sidePanel, /id="region-list"/);
+  assert.match(popup, /descriptors\.map\(\(descriptor, index\)/);
+  assert.match(popup, /removeRegion/);
 });
 
 test("popup hands the confirmed capture draft to a tab-associated Side Panel", () => {

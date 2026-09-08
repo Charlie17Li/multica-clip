@@ -4,6 +4,7 @@ const PANEL_DRAFT_KEY = "multicaSidePanelDraft";
 const isSidePanel = document.body.dataset.captureSurface === "side-panel";
 let page = null;
 let settings = {};
+let invalidRegionSelectors = new Set();
 
 const byId = (id) => document.getElementById(id);
 
@@ -111,20 +112,39 @@ function sameDocumentUrl(left, right) {
   } catch (_) { return false; }
 }
 
-async function pendingRegionDescriptor(tabUrl) {
+async function pendingRegionDescriptors(tabUrl) {
   const stored = await chrome.storage.session.get(REGION_RESULT_KEY);
-  const descriptor = stored[REGION_RESULT_KEY];
-  if (descriptor && typeof descriptor.selector === "string" && sameDocumentUrl(descriptor.url, tabUrl)) return descriptor;
-  if (descriptor) await chrome.storage.session.remove(REGION_RESULT_KEY);
-  return null;
+  const descriptors = Array.isArray(stored[REGION_RESULT_KEY]) ? stored[REGION_RESULT_KEY] : [];
+  const valid = descriptors.filter((descriptor) => descriptor && typeof descriptor.selector === "string" && sameDocumentUrl(descriptor.url, tabUrl));
+  if (valid.length !== descriptors.length) await chrome.storage.session.set({ [REGION_RESULT_KEY]: valid });
+  return valid;
 }
 
 async function refreshRegionState() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const descriptor = tab?.url ? await pendingRegionDescriptor(tab.url) : null;
-  byId("region-state").hidden = !descriptor;
-  byId("region-state").textContent = descriptor ? t("regionSelected") : "";
-  byId("clear-region").hidden = !descriptor;
+  const descriptors = tab?.url ? await pendingRegionDescriptors(tab.url) : [];
+  const list = byId("region-list");
+  list.replaceChildren(...descriptors.map((descriptor, index) => {
+    const item = document.createElement("li");
+    item.className = invalidRegionSelectors.has(descriptor.selector) ? "invalid" : "";
+    const locator = document.createElement("code");
+    locator.textContent = descriptor.selector;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = t("removeRegion");
+    remove.addEventListener("click", async () => {
+      const updated = (await pendingRegionDescriptors(tab.url)).filter((_, itemIndex) => itemIndex !== index);
+      await chrome.storage.session.set({ [REGION_RESULT_KEY]: updated });
+      invalidRegionSelectors.delete(descriptor.selector);
+      await refreshRegionState();
+    });
+    item.append(locator, remove);
+    return item;
+  }));
+  list.hidden = !descriptors.length;
+  byId("region-state").hidden = !descriptors.length;
+  byId("region-state").textContent = descriptors.length ? t("regionSelected", { count: descriptors.length }) : "";
+  byId("clear-region").hidden = !descriptors.length;
 }
 
 async function startRegionPicker() {
@@ -149,17 +169,33 @@ async function readOptionalPageContent(includeSnapshot) {
   if (!includeSnapshot) return { snapshot: "", snapshotFallback: false, adapterId: "not-run", adapterVersion: "n/a", warnings: [] };
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["site-adapters.js"] });
-  const descriptor = await pendingRegionDescriptor(tab.url);
+  const descriptors = await pendingRegionDescriptors(tab.url);
   const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: (url, selector) => {
-      const root = selector ? document.querySelector(selector) : null;
-      if (selector && (!root || !root.isConnected)) return { snapshot: "", snapshotFallback: true, adapterId: "unavailable", adapterVersion: "n/a", warnings: ["The selected page region is no longer available. Re-select it, use a whole-page snapshot, or create a link capture."] };
-      return globalThis.MulticaSiteAdapters.extract(url, document, root);
+    func: (url, selectors) => {
+      const roots = selectors.map((selector) => ({ selector, root: document.querySelector(selector) }));
+      const invalidSelectors = roots.filter(({ root }) => !root || !root.isConnected).map(({ selector }) => selector);
+      if (invalidSelectors.length) return { invalidSelectors };
+      const selectedRoots = [];
+      for (const { root } of roots) {
+        if (selectedRoots.some((selected) => selected === root || selected.contains(root))) continue;
+        for (let index = selectedRoots.length - 1; index >= 0; index -= 1) {
+          if (root.contains(selectedRoots[index])) selectedRoots.splice(index, 1);
+        }
+        selectedRoots.push(root);
+      }
+      const results = selectedRoots.map((root) => globalThis.MulticaSiteAdapters.extract(url, document, root));
+      const first = results[0] || globalThis.MulticaSiteAdapters.extract(url, document, null);
+      return {
+        ...first,
+        snapshot: results.map((entry) => entry.snapshot).filter(Boolean).join("\n\n"),
+        warnings: results.flatMap((entry) => entry.warnings || [])
+      };
     },
-    args: [tab.url, descriptor?.selector || ""]
+    args: [tab.url, descriptors.map((descriptor) => descriptor.selector)]
   });
-  if (descriptor) await chrome.storage.session.remove(REGION_RESULT_KEY);
+  if (result?.invalidSelectors?.length) return { ...result, snapshot: "", snapshotFallback: false };
+  if (descriptors.length) await chrome.storage.session.remove(REGION_RESULT_KEY);
   if (!result?.snapshot) return { ...(result || {}), snapshot: "", snapshotFallback: true };
   return { ...result, snapshotFallback: false };
 }
@@ -233,6 +269,11 @@ async function createIssue() {
     } catch (error) {
       if (!includeSnapshot) throw error;
       content = { snapshot: "", snapshotFallback: true, adapterId: "unavailable", adapterVersion: "n/a", warnings: ["Snapshot extraction could not run; created a link capture."] };
+    }
+    if (content.invalidSelectors?.length) {
+      invalidRegionSelectors = new Set(content.invalidSelectors);
+      await refreshRegionState();
+      throw new Error(t("regionInvalid"));
     }
     setStatus(t("creating"));
     const payload = issuePayload(page, byId("note").value, projectId, agentId, content);
