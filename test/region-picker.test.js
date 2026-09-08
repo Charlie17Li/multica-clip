@@ -33,7 +33,11 @@ function pickerHarness() {
   document.querySelectorAll = (selector) => selector === "#chosen" ? [target] : [];
   document.elementFromPoint = () => target;
   const writes = [];
-  const chrome = { storage: { session: { set: async (value) => writes.push(value) } } };
+  let session = {};
+  const chrome = { storage: { session: {
+    get: async (key) => ({ [key]: session[key] }),
+    set: async (value) => { session = { ...session, ...value }; writes.push(value); }
+  } } };
   const context = { document, chrome, location: { href: "https://example.test/article" }, Node: { ELEMENT_NODE: 1 }, Element: FakeElement, Promise, console };
   context.globalThis = context;
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "region-picker.js"), "utf8"), context);
@@ -47,7 +51,7 @@ test("confirms only a URL and selector, then cleans up picker UI and listeners",
   document.dispatch("click", { clientX: 1, clientY: 1 });
   const result = await pending;
   assert.deepEqual(JSON.parse(JSON.stringify(result)), { ok: true, descriptor: { url: "https://example.test/article", selector: "#chosen" } });
-  assert.deepEqual(JSON.parse(JSON.stringify(writes)), [{ multicaPendingRegionDescriptor: { url: "https://example.test/article", selector: "#chosen" } }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(writes)), [{ multicaPendingRegionDescriptor: [{ url: "https://example.test/article", selector: "#chosen" }] }]);
   assert.equal(document.listeners.size, 0);
   assert.deepEqual(document.documentElement.children, [document.body]);
   assert.equal(target.outerHTML, undefined);
@@ -74,7 +78,18 @@ test("Alt+ArrowUp promotes the candidate to its parent before Enter confirms", a
   document.dispatch("keydown", { key: "ArrowUp", altKey: true });
   document.dispatch("keydown", { key: "Enter" });
   await pending;
-  assert.equal(writes[0].multicaPendingRegionDescriptor.selector, "#parent");
+  assert.equal(writes[0].multicaPendingRegionDescriptor[0].selector, "#parent");
+});
+
+test("does not duplicate a selector when the same element is selected twice", async () => {
+  const { context, document, writes } = pickerHarness();
+  let pending = context.MulticaRegionPicker.start();
+  document.dispatch("click", { clientX: 1, clientY: 1 });
+  await pending;
+  pending = context.MulticaRegionPicker.start();
+  document.dispatch("click", { clientX: 1, clientY: 1 });
+  await pending;
+  assert.equal(writes[1].multicaPendingRegionDescriptor.length, 1);
 });
 
 test("restarting a picker cancels the earlier session and leaves one clean session", async () => {

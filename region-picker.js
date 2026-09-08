@@ -86,7 +86,10 @@
       delete root[SESSION_KEY];
       if (result.ok) {
         try {
-          await chrome.storage.session.set({ [RESULT_KEY]: result.descriptor });
+          const stored = await chrome.storage.session.get(RESULT_KEY);
+          const previous = Array.isArray(stored[RESULT_KEY]) ? stored[RESULT_KEY] : [];
+          const retained = previous.filter((descriptor) => descriptor && descriptor.url === result.descriptor.url && descriptor.selector !== result.descriptor.selector);
+          await chrome.storage.session.set({ [RESULT_KEY]: [...retained, result.descriptor] });
           chrome.runtime?.sendMessage?.({ type: "region-selected" });
         } catch (_) { /* the caller still receives the non-sensitive descriptor */ }
       }
