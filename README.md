@@ -13,6 +13,12 @@
 
 可在“设置”的“语言”中切换 English / 中文；该选择会同时应用于设置页和采集弹窗。
 
+## 自动化测试
+
+运行 `npm test` 可执行快速离线单测。端到端验收使用 Playwright（Node.js 20+）：先执行 `npx playwright install chromium`，再运行 `npm run test:e2e`。该测试会以未打包方式加载本扩展、验证 MV3 Service Worker 与 popup，并在 V2EX topic fixture 上确认正文可提取、回复正文不会进入快照。
+
+若要用本地保存的真实 V2EX 页面副本验证，可传入 `V2EX_FIXTURE_PATH=/path/to/topic.html npm run test:e2e`；测试仅在浏览器内向 `https://v2ex.com/t/1236256` 提供该本地 HTML，不会访问 V2EX 或提交 Multica 请求。
+
 ## 隐私与权限
 
 扩展清单仅声明以下安装时权限：
