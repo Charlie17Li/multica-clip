@@ -70,7 +70,7 @@
     const position = (element) => {
       const rect = element.getBoundingClientRect();
       Object.assign(overlay.style, { display: "block", top: `${Math.max(0, rect.top)}px`, left: `${Math.max(0, rect.left)}px`, width: `${Math.max(0, rect.width)}px`, height: `${Math.max(0, rect.height)}px` });
-      hint.textContent = `${elementLabel(element)} — click to select; Alt+↑ parent; Enter confirm; Esc cancel`;
+      hint.textContent = `${elementLabel(element)} — selected; Alt+↑ parent; Enter confirm; Esc cancel`;
       Object.assign(hint.style, { display: "block", top: `${Math.max(0, rect.top - 28)}px`, left: `${Math.max(0, rect.left)}px` });
     };
     const choose = (element) => {
@@ -86,11 +86,16 @@
       delete root[SESSION_KEY];
       if (result.ok) {
         try {
-          const stored = await chrome.storage.session.get(RESULT_KEY);
-          const previous = Array.isArray(stored[RESULT_KEY]) ? stored[RESULT_KEY] : [];
-          const retained = previous.filter((descriptor) => descriptor && descriptor.url === result.descriptor.url && descriptor.selector !== result.descriptor.selector);
-          await chrome.storage.session.set({ [RESULT_KEY]: [...retained, result.descriptor] });
-          chrome.runtime?.sendMessage?.({ type: "region-selected" });
+          // Injected scripts run in an untrusted content-script context, where
+          // storage.session is not available by default. Let the extension's
+          // trusted worker persist this non-content descriptor instead.
+          const stored = await chrome.runtime?.sendMessage?.({ type: "store-region-descriptor", descriptor: result.descriptor });
+          if (!stored?.ok) {
+            const previous = (await chrome.storage.session.get(RESULT_KEY))[RESULT_KEY] || [];
+            const retained = previous.filter((descriptor) => descriptor && descriptor.url === result.descriptor.url && descriptor.selector !== result.descriptor.selector);
+            await chrome.storage.session.set({ [RESULT_KEY]: [...retained, result.descriptor] });
+            chrome.runtime?.sendMessage?.({ type: "region-selected" });
+          }
         } catch (_) { /* the caller still receives the non-sensitive descriptor */ }
       }
       resolve(result);
@@ -105,7 +110,6 @@
       event.preventDefault();
       event.stopPropagation();
       choose(target);
-      finish({ ok: true, descriptor: { url: location.href, selector: selectorFor(target) } });
     }, true);
     listen(document, "keydown", (event) => {
       if (event.key === "Escape") { event.preventDefault(); cancel(); return; }

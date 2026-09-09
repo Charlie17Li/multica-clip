@@ -44,11 +44,15 @@ function pickerHarness() {
   return { context, document, target, writes };
 }
 
-test("confirms only a URL and selector, then cleans up picker UI and listeners", async () => {
+test("keeps the selected candidate visible until Enter confirms its URL and selector", async () => {
   const { context, document, target, writes } = pickerHarness();
   const pending = context.MulticaRegionPicker.start();
   document.dispatch("mousemove", { clientX: 1, clientY: 1 });
   document.dispatch("click", { clientX: 1, clientY: 1 });
+  assert.equal(document.documentElement.children.length, 3);
+  assert.equal(document.listeners.size, 3);
+  assert.deepEqual(writes, []);
+  document.dispatch("keydown", { key: "Enter" });
   const result = await pending;
   assert.deepEqual(JSON.parse(JSON.stringify(result)), { ok: true, descriptor: { url: "https://example.test/article", selector: "#chosen" } });
   assert.deepEqual(JSON.parse(JSON.stringify(writes)), [{ multicaPendingRegionDescriptor: [{ url: "https://example.test/article", selector: "#chosen" }] }]);
@@ -85,9 +89,11 @@ test("does not duplicate a selector when the same element is selected twice", as
   const { context, document, writes } = pickerHarness();
   let pending = context.MulticaRegionPicker.start();
   document.dispatch("click", { clientX: 1, clientY: 1 });
+  document.dispatch("keydown", { key: "Enter" });
   await pending;
   pending = context.MulticaRegionPicker.start();
   document.dispatch("click", { clientX: 1, clientY: 1 });
+  document.dispatch("keydown", { key: "Enter" });
   await pending;
   assert.equal(writes[1].multicaPendingRegionDescriptor.length, 1);
 });
@@ -101,10 +107,12 @@ test("keeps distinct page regions in the order the user confirms them", async ()
   let pending = context.MulticaRegionPicker.start();
   document.elementFromPoint = () => target;
   document.dispatch("click", { clientX: 1, clientY: 1 });
+  document.dispatch("keydown", { key: "Enter" });
   await pending;
   pending = context.MulticaRegionPicker.start();
   document.elementFromPoint = () => second;
   document.dispatch("click", { clientX: 1, clientY: 1 });
+  document.dispatch("keydown", { key: "Enter" });
   await pending;
 
   assert.deepEqual(JSON.parse(JSON.stringify(writes[1].multicaPendingRegionDescriptor)), [

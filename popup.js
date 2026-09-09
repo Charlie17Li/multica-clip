@@ -5,6 +5,7 @@ const isSidePanel = document.body.dataset.captureSurface === "side-panel";
 let page = null;
 let settings = {};
 let invalidRegionSelectors = new Set();
+let captureTabId = null;
 
 const byId = (id) => document.getElementById(id);
 
@@ -112,6 +113,14 @@ function sameDocumentUrl(left, right) {
   } catch (_) { return false; }
 }
 
+async function captureTab() {
+  if (Number.isInteger(captureTabId)) {
+    try { return await chrome.tabs.get(captureTabId); } catch (_) { captureTabId = null; }
+  }
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
 async function pendingRegionDescriptors(tabUrl) {
   const stored = await chrome.storage.session.get(REGION_RESULT_KEY);
   const descriptors = Array.isArray(stored[REGION_RESULT_KEY]) ? stored[REGION_RESULT_KEY] : [];
@@ -121,7 +130,7 @@ async function pendingRegionDescriptors(tabUrl) {
 }
 
 async function refreshRegionState() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await captureTab();
   const descriptors = tab?.url ? await pendingRegionDescriptors(tab.url) : [];
   const list = byId("region-list");
   list.replaceChildren(...descriptors.map((descriptor, index) => {
@@ -148,7 +157,7 @@ async function refreshRegionState() {
 }
 
 async function startRegionPicker() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await captureTab();
   if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["region-picker.js"] });
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.MulticaRegionPicker.start() });
@@ -158,7 +167,7 @@ async function openSidePanelForRegion() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error(t("openHttpPage"));
   await chrome.storage.session.set({ [PANEL_DRAFT_KEY]: {
-    url: tab.url, note: byId("note").value, projectId: byId("project-id").value,
+    tabId: tab.id, url: tab.url, note: byId("note").value, projectId: byId("project-id").value,
     agentId: byId("agent-id").value, includeSnapshot: byId("include-snapshot").checked
   } });
   const response = await chrome.runtime.sendMessage({ type: "open-capture-side-panel", tabId: tab.id });
@@ -167,7 +176,7 @@ async function openSidePanelForRegion() {
 
 async function readOptionalPageContent(includeSnapshot) {
   if (!includeSnapshot) return { snapshot: "", snapshotFallback: false, adapterId: "not-run", adapterVersion: "n/a", warnings: [] };
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await captureTab();
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["site-adapters.js"] });
   const descriptors = await pendingRegionDescriptors(tab.url);
   const [{ result }] = await chrome.scripting.executeScript({
@@ -201,7 +210,7 @@ async function readOptionalPageContent(includeSnapshot) {
 }
 
 async function readCurrentPage() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const tab = await captureTab();
   if (!tab?.url || !/^https?:/.test(tab.url)) throw new Error(t("openHttpPage"));
   const url = new URL(tab.url);
   page = {
@@ -356,10 +365,11 @@ async function initializePopup() {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
   settings = stored[SETTINGS_KEY] || {};
   applyLanguage(settings.language || "en");
-  await readCurrentPage();
-  await loadDestinationPicker();
   if (isSidePanel) {
     const draft = (await chrome.storage.session.get(PANEL_DRAFT_KEY))[PANEL_DRAFT_KEY];
+    captureTabId = Number.isInteger(draft?.tabId) ? draft.tabId : null;
+    await readCurrentPage();
+    await loadDestinationPicker();
     if (draft && sameDocumentUrl(draft.url, page.url)) {
       byId("note").value = draft.note || "";
       byId("project-id").value = draft.projectId || byId("project-id").value;
@@ -367,6 +377,9 @@ async function initializePopup() {
       byId("include-snapshot").checked = Boolean(draft.includeSnapshot);
       byId("select-region").disabled = !byId("include-snapshot").checked;
     }
+  } else {
+    await readCurrentPage();
+    await loadDestinationPicker();
   }
   await refreshRegionState();
 }
